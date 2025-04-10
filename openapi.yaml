@@ -363,6 +363,7 @@ components:
               value:
                 usd_to_lbp: 89800
                 lbp_to_usd: 89700
+
     ExchangeRateTrendsResponse:
       description: Exchange rate trend analysis for the selected period.
       content:
@@ -370,7 +371,8 @@ components:
           schema:
             type: object
             properties:
-              period:
+              #restore the original period 
+              period: 
                 type: string
               usd_to_lbp:
                 type: object
@@ -383,7 +385,7 @@ components:
                     type: number
                   trend:
                     type: string
-                    enum: [increased, decreased, unchanged]
+                    enum: [up, down, same]
               lbp_to_usd:
                 type: object
                 properties:
@@ -395,7 +397,7 @@ components:
                     type: number
                   trend:
                     type: string
-                    enum: [increased, decreased, unchanged]
+                    enum: [up, down, same]
 
     TransactionVolumeResponse:
       description: Transaction volume statistics for the selected period.
@@ -460,6 +462,86 @@ components:
                   lbp_to_usd:
                     type: string
                     enum: [higher, lower, same]
+
+    DailyTransactionVolumeResponse:
+      description: Array of daily transaction volumes between two dates.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                date:
+                  type: string
+                  format: date
+                usd_to_lbp:
+                  type: object
+                  properties:
+                    total_amount:
+                      type: number
+                    transaction_count:
+                      type: integer
+                lbp_to_usd:
+                  type: object
+                  properties:
+                    total_amount:
+                      type: number
+                    transaction_count:
+                      type: integer
+          examples:
+            example-1:
+              summary: Volume data for a few days
+              value:
+                - date: 2025-04-01
+                  usd_to_lbp:
+                    total_amount: 25000
+                    transaction_count: 10
+                  lbp_to_usd:
+                    total_amount: 35000000
+                    transaction_count: 7
+                - date: 2025-04-02
+                  usd_to_lbp:
+                    total_amount: 18000
+                    transaction_count: 8
+                  lbp_to_usd:
+                    total_amount: 20000000
+                    transaction_count: 4
+
+    DailyExchangeRateResponse:
+      description: Array of daily average exchange rates between two dates.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                date:
+                  type: string
+                  format: date
+                usd_to_lbp:
+                  type:
+                    - number
+                    - 'null'
+                lbp_to_usd:
+                  type:
+                    - number
+                    - 'null'
+          examples:
+            example-1:
+              summary: Exchange rates for a few days
+              value:
+                - date: 2025-04-01
+                  usd_to_lbp: 89000
+                  lbp_to_usd: 89500
+                - date: 2025-04-02
+                  usd_to_lbp: 90000
+                  lbp_to_usd: 89200
+                - date: 2025-04-03
+                  usd_to_lbp: null
+                  lbp_to_usd: 89100
+
 
   securitySchemes:
     bearerAuth:
