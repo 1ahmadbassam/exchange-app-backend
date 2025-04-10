@@ -1,0 +1,361 @@
+#file: noinspection YAMLSchemaValidation
+openapi: 3.1.0
+info:
+  title: LBP-USD Exchange OpenAPI Specification
+  description: >-
+    This API provides backend support for a multi-platform LBP-USD exchange
+    tracking application, including a web frontend,
+
+    a Kotlin-based Android mobile app, and a JavaFX desktop application. It
+    allows users to register and authenticate using
+
+    secure JWT-based tokens, record currency exchange transactions (both USD to
+    LBP and LBP to USD), and retrieve the average
+
+    exchange rates based on recent historical data. The exchange rates are
+    calculated using a simple average of all recorded
+
+    transactions from the last 72 hours, offering users a transparent view of
+    currency trends. The API enforces input validation,
+
+    positive value constraints, rate limiting, and password hashing to ensure
+    both accuracy and security.
+
+
+    Users across all platforms submit new exchange transactions, securely log
+    in, and view updated average exchange rates. These clients interact with the
+    same REST endpoints and rely on the same authentication mechanisms, making
+    the API a consistent and centralized service for all platforms. The backend
+    is built using Flask and SQLAlchemy, supports CORS for cross-platform
+    development, and is designed to be easy to integrate with
+
+    lightweight UIs for both desktop and mobile environments.
+  contact:
+    name: Development Team
+    email: >-
+      aae112@mail.aub.edu, ikh02@mail.aub.edu, mhw07@mail.aub.edu,
+      mzr02@mail.aub.edu
+  license:
+    name: GNU General Public License v3.0
+    url: https://www.gnu.org/licenses/gpl-3.0.html
+  version: 1.0.0
+servers:
+  - url: http://127.0.0.1:5000
+    description: Local development server
+paths:
+  /auth:
+    post:
+      summary: Authenticate user and issue JWT token
+      description: >
+        Authenticates a user using their username and password. If successful, a
+        JWT token is returned for subsequent requests. The token must be
+        included in the Authorization header as a bearer token.
+      operationId: authenticateUser
+      security:
+        - none: []
+      requestBody:
+        $ref: '#/components/requestBodies/Authentication'
+      responses:
+        '200':
+          $ref: '#/components/responses/AuthTokenResponse'
+        '400':
+          description: Invalid input format
+          content:
+            application/json:
+              examples:
+                InvalidInput:
+                  summary: Missing or invalid fields
+                  value:
+                    error: Invalid input format
+        '403':
+          description: Invalid username or password
+          content:
+            application/json:
+              examples:
+                Unauthorized:
+                  summary: Invalid credentials
+                  value:
+                    error: Invalid username or password
+  /user:
+    post:
+      summary: Register a new user
+      description: |2
+          Registers a new user with a unique username and password. The username must not already be taken, the password is hashed and securely stored. This route does not require authentication.
+      operationId: createUser
+      security:
+        - none: []
+      requestBody:
+        $ref: '#/components/requestBodies/User'
+      responses:
+        '200':
+          $ref: '#/components/responses/UserCreated'
+        '400':
+          description: Invalid input or user already exists
+          content:
+            application/json:
+              examples:
+                UserExists:
+                  summary: Username taken
+                  value:
+                    error: User already exists
+                InvalidInput:
+                  summary: Missing or invalid fields
+                  value:
+                    error: Invalid input format
+  /transaction:
+    post:
+      summary: Submit a new LBP-USD or USD-LBP exchange transaction
+      description: >
+        Allows an anonymous or authenticated user to submit a new currency
+        exchange transaction. The user must specify whether the transaction is
+        USD to LBP or LBP to USD, along with the exchanged amounts. The
+        transaction will be stored and later used to compute the average
+        exchange rate. Authentication presented must be valid or transaction
+        will be rejected.
+      operationId: addTransaction
+      security:
+        - bearerAuth: []
+        - {}
+      requestBody:
+        $ref: '#/components/requestBodies/Transaction'
+      responses:
+        '200':
+          $ref: '#/components/responses/TransactionCreated'
+        '400':
+          description: Invalid transaction input. Amounts must be positive numbers.
+          content:
+            application/json:
+              examples:
+                InvalidAmount:
+                  summary: Negative amount
+                  value:
+                    error: Invalid amount
+        '403':
+          description: Invalid or expired authentication token. Access is forbidden.
+          content:
+            application/json:
+              examples:
+                Unauthorized:
+                  summary: Invalid JWT
+                  value:
+                    error: Access is forbidden
+    get:
+      summary: Retrieve all transactions for the authenticated user
+      description: >
+        Fetches all the exchange transactions submitted by the currently
+        authenticated user. The data includes the amount, exchange direction,
+        and submission date of each transaction. A valid JWT token must be
+        provided in the Authorization header.
+      operationId: getUserTransactions
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/TransactionList'
+        '403':
+          description: Missing, invalid, or expired JWT token
+          content:
+            application/json:
+              examples:
+                Unauthorized:
+                  summary: Invalid JWT
+                  value:
+                    error: Access is forbidden
+  /exchangeRate:
+    get:
+      summary: Get exchange rate
+      description: >-
+        Retrieve the average exchange rate based on transactions from the last
+        72 hours.
+      operationId: getExchangeRate
+      responses:
+        '200':
+          description: Successful response with exchange rate data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRateResponse'
+        '404':
+          description: No transactions found in the last 3 days.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: No transactions found in the last 3 days
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Internal Server Error
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_name:
+          type: string
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        usd_amount:
+          type: number
+        lbp_amount:
+          type: number
+        usd_to_lbp:
+          type: boolean
+        user_id:
+          type:
+            - integer
+            - 'null'
+          description: ID of user associated with transaction.
+        added_date:
+          type: string
+          format: date
+    ExchangeRateResponse:
+      type: object
+      properties:
+        usd_to_lbp:
+          type:
+            - number
+            - 'null'
+        lbp_to_usd:
+          type:
+            - number
+            - 'null'
+  requestBodies:
+    Transaction:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Transaction'
+          examples:
+            Example:
+              value:
+                usd_amount: 10
+                lbp_amount: 900000
+                usd_to_lbp: true
+    User:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - user_name
+              - password
+            properties:
+              user_name:
+                type: string
+                maxLength: 30
+              password:
+                type: string
+          examples:
+            Example:
+              value:
+                user_name: ahmadb
+                password: mySecurePassword123
+    Authentication:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - user_name
+              - password
+            properties:
+              user_name:
+                type: string
+              password:
+                type: string
+          examples:
+            Example:
+              value:
+                user_name: ahmadb
+                password: mySecurePassword123
+  responses:
+    TransactionCreated:
+      description: Transaction successfully added
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Transaction'
+          examples:
+            Success:
+              value:
+                id: 21
+                usd_amount: 100
+                lbp_amount: 9000000
+                usd_to_lbp: true
+                user_id: 3
+                added_date: '2025-04-03'
+    TransactionList:
+      description: List of transactions associated with the authenticated user
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Transaction'
+          examples:
+            Example:
+              value:
+                - id: 12
+                  usd_amount: 10
+                  lbp_amount: 900000
+                  usd_to_lbp: true
+                  user_id: 1
+                  added_date: '2025-04-02'
+                - id: 13
+                  usd_amount: 5
+                  lbp_amount: 450000
+                  usd_to_lbp: true
+                  user_id: 1
+                  added_date: '2025-04-02'
+    UserCreated:
+      description: User successfully registered
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+          examples:
+            Success:
+              value:
+                id: 10
+                user_name: ahmadb
+    AuthTokenResponse:
+      description: JWT token issued for authenticated session
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+          examples:
+            Example:
+              value:
+                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT authentication using Bearer tokens
+    none:
+      type: http
+      scheme: none
+      description: No authentication required
