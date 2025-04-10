@@ -1,31 +1,11 @@
-import os
-import statistics
 import datetime
+import statistics
 import traceback
 
-from dotenv import load_dotenv
-from flask import Flask, request, jsonify, abort
-from flask_bcrypt import Bcrypt
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
-from flask_marshmallow import Marshmallow
 import jwt
+from flask import request, jsonify, abort
 
-load_dotenv()
-from db_config import DB_CONFIG
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = DB_CONFIG
-SECRET_KEY = os.getenv("SECRET_KEY")
-CORS(app)
-db = SQLAlchemy(app)
-limiter = Limiter(key_func=get_remote_address)
-limiter.init_app(app)
-ma = Marshmallow(app)
-bcrypt = Bcrypt(app)
-
+from init import app, SECRET_KEY, db, limiter, bcrypt
 from model.transaction import Transaction, TransactionSchema
 from model.user import User, UserSchema
 
@@ -161,6 +141,6 @@ def authenticate_user():
 
 
 if __name__ == "__main__":
-    # with app.app_context():
-    #     db.create_all()
+    #with app.app_context():
+    #    db.create_all()
     app.run(debug=False)

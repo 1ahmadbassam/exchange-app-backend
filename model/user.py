@@ -1,7 +1,7 @@
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from model import db, ma, bcrypt
+from init import db, ma, bcrypt
 
 
 class User(db.Model):

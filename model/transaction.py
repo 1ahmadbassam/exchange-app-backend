@@ -3,7 +3,7 @@ import datetime
 from sqlalchemy import CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from model import db, ma
+from init import db, ma
 
 
 class Transaction(db.Model):
