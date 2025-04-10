@@ -177,16 +177,11 @@ paths:
       summary: Get exchange rate
       tags: [ Exchange Rates ]
       description: >-
-        Retrieve the average exchange rate based on transactions from the last
-        72 hours.
+        Retrieve the average exchange rate based on transactions from the last 72 hours.
       operationId: getExchangeRate
       responses:
         '200':
-          description: Successful response with exchange rate data.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ExchangeRateResponse'
+          $ref: '#/components/responses/ExchangeRateResponse'
         '404':
           description: No transactions found in the last 3 days.
           content:
@@ -233,17 +228,6 @@ components:
         added_date:
           type: string
           format: date
-    ExchangeRateResponse:
-      type: object
-      properties:
-        usd_to_lbp:
-          type:
-            - number
-            - 'null'
-        lbp_to_usd:
-          type:
-            - number
-            - 'null'
   requestBodies:
     Transaction:
       required: true
@@ -359,6 +343,124 @@ components:
             Example:
               value:
                 token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    ExchangeRateResponse:
+      description: Exchange rate for the last 72 hours.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              usd_to_lbp:
+                type:             
+                  - integer
+                  - 'null'
+              lbp_to_usd:
+                type: 
+                  - integer
+                  - 'null'
+          examples:
+            Example:
+              value:
+                usd_to_lbp: 89800
+                lbp_to_usd: 89700
+    ExchangeRateTrendsResponse:
+      description: Exchange rate trend analysis for the selected period.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              period:
+                type: string
+              usd_to_lbp:
+                type: object
+                properties:
+                  start_rate:
+                    type: number
+                  end_rate:
+                    type: number
+                  percentage_change:
+                    type: number
+                  trend:
+                    type: string
+                    enum: [increased, decreased, unchanged]
+              lbp_to_usd:
+                type: object
+                properties:
+                  start_rate:
+                    type: number
+                  end_rate:
+                    type: number
+                  percentage_change:
+                    type: number
+                  trend:
+                    type: string
+                    enum: [increased, decreased, unchanged]
+
+    TransactionVolumeResponse:
+      description: Transaction volume statistics for the selected period.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              period:
+                type: string
+              total_transactions:
+                type: integer
+              usd_to_lbp:
+                type: object
+                properties:
+                  total_amount:
+                    type: number
+                  transaction_count:
+                    type: integer
+              lbp_to_usd:
+                type: object
+                properties:
+                  total_amount:
+                    type: number
+                  transaction_count:
+                    type: integer
+
+    ExchangeRateComparisonResponse:
+      description: Comparison between current and historical exchange rates.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              current_rate:
+                type: object
+                properties:
+                  usd_to_lbp:
+                    type: number
+                  lbp_to_usd:
+                    type: number
+              historical_rate:
+                type: object
+                properties:
+                  usd_to_lbp:
+                    type: number
+                  lbp_to_usd:
+                    type: number
+              percentage_difference:
+                type: object
+                properties:
+                  usd_to_lbp:
+                    type: number
+                  lbp_to_usd:
+                    type: number
+              trend:
+                type: object
+                properties:
+                  usd_to_lbp:
+                    type: string
+                    enum: [higher, lower, same]
+                  lbp_to_usd:
+                    type: string
+                    enum: [higher, lower, same]
+
   securitySchemes:
     bearerAuth:
       type: http
