@@ -191,22 +191,20 @@ paths:
           description: No transactions found in the last 3 days.
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: No transactions found in the last 3 days
+              examples:
+                NoTransactionFound:
+                  summary: string
+                  value:
+                    error: No transactions found in the last 3 days
         '500':
           description: Server error.
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Internal Server Error
+              examples:
+                InternalError:
+                  summary: string
+                  value:
+                    error: Internal server error
 components:
   schemas:
     User:
