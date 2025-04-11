@@ -28,3 +28,17 @@ def get_exchange_rate(end_date=datetime.datetime.now(datetime.timezone.utc)):
 def exchange_rate():
     usd_to_lbp, lbp_to_usd = get_exchange_rate()
     return jsonify({'usd_to_lbp': usd_to_lbp if usd_to_lbp else None, 'lbp_to_usd': lbp_to_usd if lbp_to_usd else None})
+
+@exchange_bp.route('/exchangeRate/hourly', methods=['GET'])
+@limiter.limit("10 per minute")
+def exchange_rate_hourly():
+    rates = []
+    for i in range(24):
+        hour = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=i)
+        usd_to_lbp, lbp_to_usd = get_exchange_rate(hour)
+        rates.append({
+            "timestamp": hour.isoformat().replace("+00:00", "Z"),
+            "usd_to_lbp": usd_to_lbp,
+            "lbp_to_usd": lbp_to_usd
+        })
+    return jsonify(rates)
