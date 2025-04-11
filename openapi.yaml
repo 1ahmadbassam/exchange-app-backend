@@ -622,21 +622,21 @@ paths:
       security:
         - bearerAuth: [ ]
       requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            type: object
-            required:
-              - id
-            properties:
-              id:
-                type: integer
-          examples:
-            Example:
-              summary: Accept offer by ID
-              value:
-                id: 15
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+              properties:
+                id:
+                  type: integer
+            examples:
+              Example:
+                summary: Accept offer by ID
+                value:
+                  id: 15
       responses:
         '200':
           $ref: '#/components/responses/OfferAccepted'
