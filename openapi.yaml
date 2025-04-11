@@ -43,7 +43,7 @@ info:
   license:
     name: GNU General Public License v3.0
     url: https://www.gnu.org/licenses/gpl-3.0.html
-  version: 1.0.1
+  version: 1.0.2
 tags:
   - name: "Exchange Rates"
     description: "Endpoints related to exchange rate information."
@@ -66,8 +66,6 @@ paths:
         JWT token is returned for subsequent requests. The token must be
         included in the Authorization header as a bearer token.
       operationId: authenticateUser
-      security:
-        - none: []
       requestBody:
         $ref: '#/components/requestBodies/Authentication'
       responses:
@@ -98,8 +96,6 @@ paths:
       description: |2
           Registers a new user with a unique username and password. The username must not already be taken, the password is hashed and securely stored. This route does not require authentication.
       operationId: createUser
-      security:
-        - none: []
       requestBody:
         $ref: '#/components/requestBodies/User'
       responses:
@@ -189,22 +185,13 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/ExchangeRateResponse'
-        '404':
-          description: No transactions found in the last 3 days.
-          content:
-            application/json:
-              examples:
-                NoTransactionFound:
-                  summary: string
-                  value:
-                    error: No transactions found in the last 3 days
         '500':
           description: Server error.
           content:
             application/json:
               examples:
                 InternalError:
-                  summary: string
+                  summary: Server error
                   value:
                     error: Internal server error
   /exchangeRate/trend:
@@ -446,6 +433,238 @@ paths:
               examples:
                 InternalError:
                   summary: Internal server error
+                  value:
+                    error: Internal server error
+  /offer/delete:
+    post:
+      summary: Delete an offer by ID
+      description: >
+        Permanently deletes an offer from the system. The offer ID is passed in the JSON body.
+        This action is irreversible.
+      tags: [ Exchange Offers ]
+      operationId: deleteExchangeOffer
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+              properties:
+                id:
+                  type: integer
+            examples:
+              Example:
+                summary: Delete offer by ID
+                value:
+                  id: 15
+      responses:
+        '200':
+          description: Deletion successful.
+        '400':
+          description: Invalid offer input.
+          content:
+            application/json:
+              examples:
+                InvalidData:
+                  summary: Bad Request
+                  value:
+                    error: Invalid offer data
+        '403':
+          description: Authentication required or invalid token.
+          content:
+            application/json:
+              examples:
+                Unauthorized:
+                  summary: Unauthorized access
+                  value:
+                    error: Access is forbidden
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              examples:
+                InternalError:
+                  summary: Internal server error
+                  value:
+                    error: Internal server error
+  /offer/update:
+    post:
+      summary: Update an offer by ID
+      description: >
+        Allows the user to update their own offer. All fields are optional. If no fields are provided, the request is valid but has no effect.
+        The offer ID must be included in the request body. 
+        The offer must be available else the request is denied. The creation date is updated to reflect the modification date.
+      tags: [ Exchange Offers ]
+      operationId: updateExchangeOffer
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+              properties:
+                id:
+                  type: integer
+                usd_amount:
+                  type: number
+                lbp_amount:
+                  type: number
+                usd_to_lbp:
+                  type: boolean
+                location:
+                  type: string
+                phone_number:
+                  type: string
+            examples:
+              Example:
+                summary: Partial update
+                value:
+                  id: 15
+                  usd_amount: 50
+                  lbp_amount: 450000
+      responses:
+        '200':
+          $ref: '#/components/responses/OfferUpdated'
+        '400':
+          description: Invalid offer input.
+          content:
+            application/json:
+              examples:
+                InvalidData:
+                  summary: Bad Request
+                  value:
+                    error: Invalid offer data
+        '403':
+          description: Authentication required or invalid token.
+          content:
+            application/json:
+              examples:
+                Unauthorized:
+                  summary: Unauthorized access
+                  value:
+                    error: Access is forbidden
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              examples:
+                InternalError:
+                  summary: Internal server error
+                  value:
+                    error: Internal server error
+  /offer/available:
+    get:
+      summary: List all available exchange offers
+      description: >
+        Returns a list of all currently available (i.e., not taken) peer-to-peer exchange offers.
+        No authentication is required. This allows users to browse offers submitted by others.
+      tags: [ Exchange Offers ]
+      operationId: getAvailableOffers
+      responses:
+        '200':
+          $ref: '#/components/responses/OfferList'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              examples:
+                InternalError:
+                  summary: Server error
+                  value:
+                    error: Internal server error
+  /offer/my:
+    get:
+      summary: List offers submitted by the authenticated user
+      description: >
+        Returns all offers that were submitted by the currently authenticated user.
+        This includes both available and taken offers (for history purposes).
+      tags: [ Exchange Offers ]
+      operationId: getMyOffers
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          $ref: '#/components/responses/UserOfferList'
+        '403':
+          description: Authentication required or invalid token
+          content:
+            application/json:
+              examples:
+                Unauthorized:
+                  summary: Unauthorized
+                  value:
+                    error: Access is forbidden
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              examples:
+                InternalError:
+                  summary: Internal Error
+                  value:
+                    error: Internal server error
+  /offer/accept:
+    post:
+      summary: Mark an offer as accepted
+      description: >
+        Allows an authenticated user to accept an available offer. This marks the offer as unavailable.
+        The offer ID is provided in the request body.
+      tags: [ Exchange Offers ]
+      operationId: acceptExchangeOffer
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - id
+            properties:
+              id:
+                type: integer
+          examples:
+            Example:
+              summary: Accept offer by ID
+              value:
+                id: 15
+      responses:
+        '200':
+          $ref: '#/components/responses/OfferAccepted'
+        '400':
+          description: Invalid offer ID or already accepted
+          content:
+            application/json:
+              examples:
+                InvalidRequest:
+                  summary: Offer not found or unavailable
+                  value:
+                    error: Offer is already taken or does not exist
+        '403':
+          description: Authentication required or invalid token
+          content:
+            application/json:
+              examples:
+                Unauthorized:
+                  summary: Unauthorized
+                  value:
+                    error: Access is forbidden
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              examples:
+                InternalError:
+                  summary: Internal Error
                   value:
                     error: Internal server error
 components:
@@ -942,6 +1161,104 @@ components:
                 phone_number: "+96171234567"
                 user_id: 3
                 available: true
+                created_at: "2025-04-10T12:00:00Z"
+    OfferUpdated:
+      description: Offer successfully updated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Offer'
+          examples:
+            Example:
+              summary: Offer updated successfully
+              value:
+                id: 15
+                usd_amount: 50
+                lbp_amount: 4500000
+                usd_to_lbp: true
+                location: "Beirut"
+                phone_number: "+96171234567"
+                user_id: 3
+                available: true
+                created_at: "2025-04-10T12:00:00Z"
+    OfferList:
+      description: List of active offers
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Offer'
+          examples:
+            Example:
+              summary: Available offers
+              value:
+                - id: 1
+                  usd_amount: 100
+                  lbp_amount: 9000000
+                  usd_to_lbp: true
+                  location: "Beirut"
+                  phone_number: "+96171234567"
+                  user_id: 3
+                  available: true
+                  created_at: "2025-04-10T12:00:00Z"
+                - id: 2
+                  usd_amount: 50
+                  lbp_amount: 4500000
+                  usd_to_lbp: false
+                  location: "Tripoli"
+                  phone_number: "+96171111222"
+                  user_id: 5
+                  available: true
+                  created_at: "2025-04-09T18:25:00Z"
+    UserOfferList:
+      description: List of user-submitted offers
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Offer'
+          examples:
+            Example:
+              summary: User's offers
+              value:
+                - id: 1
+                  usd_amount: 100
+                  lbp_amount: 9000000
+                  usd_to_lbp: true
+                  location: "Beirut"
+                  phone_number: "+96171234567"
+                  user_id: 3
+                  available: true
+                  created_at: "2025-04-10T12:00:00Z"
+                - id: 7
+                  usd_amount: 75
+                  lbp_amount: 6750000
+                  usd_to_lbp: true
+                  location: "Beirut"
+                  phone_number: "+96171234567"
+                  user_id: 3
+                  available: false
+                  created_at: "2025-04-01T09:00:00Z"
+    OfferAccepted:
+      description: Offer successfully marked as accepted
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Offer'
+          examples:
+            Example:
+              summary: Offer accepted
+              value:
+                id: 15
+                usd_amount: 100
+                lbp_amount: 9000000
+                usd_to_lbp: true
+                location: "Beirut"
+                phone_number: "+96171234567"
+                user_id: 3
+                available: false
                 created_at: "2025-04-10T12:00:00Z"
   securitySchemes:
     bearerAuth:
