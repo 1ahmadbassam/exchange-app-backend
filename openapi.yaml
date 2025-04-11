@@ -51,6 +51,8 @@ tags:
     description: "Endpoints related to transactions between USD and LBP."
   - name: "User Management"
     description: "Endpoints for user registration, authentication, and user-specific data."
+  - name: "Exchange Offers"
+    description: "Endpoints for managing peer-to-peer exchange offers between users."
 servers:
   - url: http://127.0.0.1:5000
     description: Local development server
@@ -404,6 +406,48 @@ paths:
                   summary: Internal Error
                   value:
                     error: Internal server error
+  /offer:
+    post:
+      summary: Submit a new exchange offer
+      description: >
+        Allows an authenticated user to create a peer-to-peer exchange offer. The offer includes currency amounts, 
+        direction (USD to LBP or LBP to USD), user location, and phone number.
+      tags: [ Exchange Offers ]
+      operationId: addExchangeOffer
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        $ref: '#/components/requestBodies/Offer'
+      responses:
+        '200':
+          $ref: '#/components/responses/OfferCreated'
+        '400':
+          description: Invalid offer input.
+          content:
+            application/json:
+              examples:
+                InvalidData:
+                  summary: Bad Request
+                  value:
+                    error: Invalid offer data
+        '403':
+          description: Authentication required or invalid token.
+          content:
+            application/json:
+              examples:
+                Unauthorized:
+                  summary: Unauthorized access
+                  value:
+                    error: Access is forbidden
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              examples:
+                InternalError:
+                  summary: Internal server error
+                  value:
+                    error: Internal server error
 components:
   schemas:
     User:
@@ -504,6 +548,30 @@ components:
           type:
             - number
             - 'null'
+    Offer:
+      type: object
+      properties:
+        id:
+          type: integer
+        usd_amount:
+          type: number
+        lbp_amount:
+          type: number
+        usd_to_lbp:
+          type: boolean
+        location:
+          type: string
+        phone_number:
+          type: string
+        user_id:
+          type: integer
+          description: ID of user associated with the offer.
+        available:
+          type: boolean
+          description: Indicates whether the offer is still available or has been taken.
+        created_at:
+          type: string
+          format: date-time
   parameters:
     StartDate:
       name: start_date
@@ -573,6 +641,38 @@ components:
               value:
                 user_name: ahmadb
                 password: mySecurePassword123
+    Offer:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - usd_amount
+              - lbp_amount
+              - usd_to_lbp
+              - location
+              - phone_number
+            properties:
+              usd_amount:
+                type: number
+              lbp_amount:
+                type: number
+              usd_to_lbp:
+                type: boolean
+              location:
+                type: string
+              phone_number:
+                type: string
+          examples:
+            Example:
+              summary: Example offer submission
+              value:
+                usd_amount: 10
+                lbp_amount: 900000
+                usd_to_lbp: true
+                location: "Beirut"
+                phone_number: "+96171234567"
   responses:
     TransactionCreated:
       description: Transaction successfully added
@@ -656,7 +756,6 @@ components:
               value:
                 usd_to_lbp: 89800
                 lbp_to_usd: 89700
-
     ExchangeRateTrendResponse:
       description: Exchange rate trend for the selected period.
       content:
@@ -747,7 +846,6 @@ components:
                 - date: 2025-04-07
                   usd_to_lbp: null
                   lbp_to_usd: 92400
-
     MonthlyExchangeRateResponse:
       description: Monthly average exchange rates.
       content:
@@ -781,7 +879,6 @@ components:
                 - date: 2025-10-01
                   usd_to_lbp: null
                   lbp_to_usd: 92400
-
     DailyTransactionVolumeResponse:
       description: Daily transaction volumes and counts.
       content:
@@ -801,7 +898,6 @@ components:
                   lbp_to_usd:
                     total_amount: 20000000
                     transaction_count: 5
-
     MonthlyTransactionVolumeResponse:
       description: Monthly transaction volumes and counts.
       content:
@@ -828,6 +924,25 @@ components:
                   lbp_to_usd:
                     total_amount: 48000000
                     transaction_count: 38
+    OfferCreated:
+      description: Offer successfully created
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Offer'
+          examples:
+            Example:
+              summary: Offer created successfully
+              value:
+                id: 15
+                usd_amount: 10
+                lbp_amount: 900000
+                usd_to_lbp: true
+                location: "Beirut"
+                phone_number: "+96171234567"
+                user_id: 3
+                available: true
+                created_at: "2025-04-10T12:00:00Z"
   securitySchemes:
     bearerAuth:
       type: http
