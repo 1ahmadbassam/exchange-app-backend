@@ -269,6 +269,27 @@ paths:
                   summary: Internal Error
                   value:
                     error: Internal server error
+  /exchangeRate/hourly:
+    get:
+      summary: Get hourly exchange rates over the past 24 hours
+      description: >
+        Returns the average exchange rates per hour for USD to LBP and LBP to USD,
+        over the last 24 hours from the current time. Each entry represents
+        the average rate during a one-hour window. Each entry is the average over the past 72 hours from it.
+      tags: [ Exchange Rates ]
+      operationId: getHourlyExchangeRates
+      responses:
+        '200':
+          $ref: '#/components/responses/HourlyExchangeRateResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              examples:
+                InternalError:
+                  summary: Internal Error
+                  value:
+                    error: Internal server error
   /exchangeRate/daily:
     get:
       summary: Get daily exchange rates
@@ -694,7 +715,8 @@ components:
           description: ID of user associated with transaction.
         added_date:
           type: string
-          format: date
+          format: date-time
+          description: Date and time a transaction was added.
     Trend:
       type: object
       properties:
@@ -907,7 +929,7 @@ components:
                 lbp_amount: 9000000
                 usd_to_lbp: true
                 user_id: 3
-                added_date: '2025-04-03'
+                added_date: '2025-04-09T18:25:00Z'
     TransactionList:
       description: List of transactions associated with the authenticated user
       content:
@@ -924,13 +946,13 @@ components:
                   lbp_amount: 900000
                   usd_to_lbp: true
                   user_id: 1
-                  added_date: '2025-04-02'
+                  added_date: '2025-04-09T18:25:00Z'
                 - id: 13
                   usd_amount: 5
                   lbp_amount: 450000
                   usd_to_lbp: true
                   user_id: 1
-                  added_date: '2025-04-02'
+                  added_date: '2025-04-09T18:25:00Z'
     UserCreated:
       description: User successfully registered
       content:
@@ -1032,6 +1054,39 @@ components:
                   min_rate: 89700
                   max_rate: 89100
                   message: The LBP-USD rate has fluctuated slightly in the past 7 days.
+    HourlyExchangeRateResponse:
+      description: Hourly average exchange rates.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                datetime:
+                  type: string
+                  format: date-time
+                usd_to_lbp:
+                  type:
+                    - number
+                    - 'null'
+                lbp_to_usd:
+                  type:
+                    - number
+                    - 'null'
+          examples:
+            Example:
+              summary: Hourly exchange rates
+              value:
+                - datetime: "2025-04-10T09:00:00Z"
+                  usd_to_lbp: 89200
+                  lbp_to_usd: 89600
+                - datetime: "2025-04-10T10:00:00Z"
+                  usd_to_lbp: 89500
+                  lbp_to_usd: null
+                - datetime: "2025-04-10T11:00:00Z"
+                  usd_to_lbp: null
+                  lbp_to_usd: 89250
     DailyExchangeRateResponse:
       description: Daily average exchange rates.
       content:
