@@ -30,6 +30,11 @@ info:
     development, and is designed to be easy to integrate with
 
     lightweight UIs for both desktop and mobile environments.
+    
+    The exchange rate in this app is derived in the following way:
+      - The daily exchange rate is the rate over the past 72 hours (three days).
+      - The monthly exchange rate is the average of the daily exchange rates over the past month.
+      - The yearly exchange rate is the average of the monthly exchange rates over the past year.
   contact:
     name: Development Team
     email: >-
@@ -38,7 +43,7 @@ info:
   license:
     name: GNU General Public License v3.0
     url: https://www.gnu.org/licenses/gpl-3.0.html
-  version: 1.0.0
+  version: 1.0.1
 tags:
   - name: "Exchange Rates"
     description: "Endpoints related to exchange rate information."
@@ -200,6 +205,205 @@ paths:
                   summary: string
                   value:
                     error: Internal server error
+  /exchangeRate/trend:
+    get:
+      summary: Get exchange rate trend
+      description: >
+        Provides insights into the trend of exchange rates (USD to LBP and LBP to USD) over a specified period.
+        The trend compares between rate today and rate with specified time period (e.g. 7 days).
+        Returns a positive percentage if the trend is increasing and a negative one if it is decreasing.
+      operationId: getExchangeRateTrend
+      tags: [ Exchange Rates ]
+      parameters:
+        - in: query
+          name: period
+          required: true
+          schema:
+            type: string
+            enum: [ 24h, 7d, 30d, 3mon, 6mon, 1yr ]
+          description: Time range for trend of exchange rates.
+      responses:
+        '200':
+          $ref: '#/components/responses/ExchangeRateTrendResponse'
+        '400':
+          description: Invalid or missing query parameter.
+          content:
+            application/json:
+              examples:
+                InvalidQuery:
+                  summary: Invalid Query
+                  value:
+                    error: Bad request
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              examples:
+                InternalError:
+                  summary: Internal Error
+                  value:
+                    error: Internal server error
+  /exchangeRate/volatility:
+    get:
+      summary: Get exchange rate volatility
+      description: >
+        Measures the volatility of exchange rates (USD to LBP and LBP to USD) over a specified time period compared to today.
+        Returns the standard deviation, range (min and max), and a human-readable message describing the volatility.
+      operationId: getExchangeRateVolatility
+      tags: [ Exchange Rates ]
+      parameters:
+        - in: query
+          name: period
+          required: true
+          schema:
+            type: string
+            enum: [ 24h, 7d, 30d, 3mon, 6mon, 1yr ]
+          description: Time range over which to calculate exchange rate volatility.
+      responses:
+        '200':
+          $ref: '#/components/responses/ExchangeRateVolatilityResponse'
+        '400':
+          description: Invalid or missing query parameter.
+          content:
+            application/json:
+              examples:
+                InvalidQuery:
+                  summary: Invalid Query
+                  value:
+                    error: Bad request
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              examples:
+                InternalError:
+                  summary: Internal Error
+                  value:
+                    error: Internal server error
+  /exchangeRate/daily:
+    get:
+      summary: Get daily exchange rates
+      description: >
+        Returns the average daily exchange rates for USD to LBP and LBP to USD between the specified start and end dates (inclusive).
+      operationId: getDailyExchangeRates
+      tags: [ Exchange Rates ]
+      parameters:
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+      responses:
+        '200':
+          $ref: '#/components/responses/DailyExchangeRateResponse'
+        '400':
+          description: Invalid or missing query parameter.
+          content:
+            application/json:
+              examples:
+                InvalidQuery:
+                  summary: Invalid Query
+                  value:
+                    error: Bad request
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              examples:
+                InternalError:
+                  summary: Internal Error
+                  value:
+                    error: Internal server error
+  /transactions/volume/daily:
+    get:
+      summary: Get daily transaction volume
+      description: >
+        Returns the total volume and number of transactions per day for USD to LBP and LBP to USD between the specified start and end dates (inclusive).
+      operationId: getDailyTransactionVolume
+      tags: [ Transactions ]
+      parameters:
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+      responses:
+        '200':
+          $ref: '#/components/responses/DailyTransactionVolumeResponse'
+        '400':
+          description: Invalid or missing query parameter.
+          content:
+            application/json:
+              examples:
+                InvalidQuery:
+                  summary: Invalid Query
+                  value:
+                    error: Bad request
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              examples:
+                InternalError:
+                  summary: Internal Error
+                  value:
+                    error: Internal server error
+  /exchangeRate/monthly:
+    get:
+      summary: Get monthly exchange rates
+      description: >
+        Returns the average monthly exchange rates for USD to LBP and LBP to USD between the specified start and end dates (inclusive).
+      operationId: getMonthlyExchangeRates
+      tags: [ Exchange Rates ]
+      parameters:
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+      responses:
+        '200':
+          $ref: '#/components/responses/MonthlyExchangeRateResponse'
+        '400':
+          description: Invalid or missing query parameter.
+          content:
+            application/json:
+              examples:
+                InvalidQuery:
+                  summary: Invalid Query
+                  value:
+                    error: Bad request
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              examples:
+                InternalError:
+                  summary: Internal Error
+                  value:
+                    error: Internal server error
+  /transactions/volume/monthly:
+    get:
+      summary: Get monthly transaction volumes
+      description: >
+        Returns the total volume and number of transactions per month for USD to LBP and LBP to USD between the specified start and end dates (inclusive).
+      operationId: getMonthlyTransactionVolume
+      tags: [ Transactions ]
+      parameters:
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+      responses:
+        '200':
+          $ref: '#/components/responses/MonthlyTransactionVolumeResponse'
+        '400':
+          description: Invalid or missing query parameter.
+          content:
+            application/json:
+              examples:
+                InvalidQuery:
+                  summary: Invalid Query
+                  value:
+                    error: Bad request
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              examples:
+                InternalError:
+                  summary: Internal Error
+                  value:
+                    error: Internal server error
 components:
   schemas:
     User:
@@ -228,6 +432,95 @@ components:
         added_date:
           type: string
           format: date
+    Trend:
+      type: object
+      properties:
+        former_rate:
+          type:
+            - number
+            - 'null'
+        current_rate:
+          type:
+            - number
+            - 'null'
+        percentage_change:
+          type:
+            - number
+            - 'null'
+        message:
+          type: string
+    Volatility:
+      type: object
+      properties:
+        standard_deviation:
+          type:
+            - number
+            - 'null'
+        min_rate:
+          type:
+            - number
+            - 'null'
+        max_rate:
+          type:
+            - number
+            - 'null'
+        message:
+          type: string
+    Volume:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        usd_to_lbp:
+          type: object
+          properties:
+            total_amount:
+              type:
+                - number
+                - 'null'
+            transaction_count:
+              type: integer
+        lbp_to_usd:
+          type: object
+          properties:
+            total_amount:
+              type:
+                - number
+                - 'null'
+            transaction_count:
+              type: integer
+    Rate:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        usd_to_lbp:
+          type:
+            - number
+            - 'null'
+        lbp_to_usd:
+          type:
+            - number
+            - 'null'
+  parameters:
+    StartDate:
+      name: start_date
+      in: query
+      required: true
+      schema:
+        type: string
+        format: date
+      description: Start date for the range (inclusive).
+    EndDate:
+      name: end_date
+      in: query
+      required: true
+      schema:
+        type: string
+        format: date
+      description: End date for the range (inclusive).
   requestBodies:
     Transaction:
       required: true
@@ -364,43 +657,37 @@ components:
                 usd_to_lbp: 89800
                 lbp_to_usd: 89700
 
-    ExchangeRateTrendsResponse:
-      description: Exchange rate trend analysis for the selected period.
+    ExchangeRateTrendResponse:
+      description: Exchange rate trend for the selected period.
       content:
         application/json:
           schema:
             type: object
             properties:
-              #restore the original period 
+              # restore the original period
               period: 
                 type: string
               usd_to_lbp:
-                type: object
-                properties:
-                  start_rate:
-                    type: number
-                  end_rate:
-                    type: number
-                  percentage_change:
-                    type: number
-                  trend:
-                    type: string
-                    enum: [up, down, same]
+                $ref: '#/components/schemas/Trend'
               lbp_to_usd:
-                type: object
-                properties:
-                  start_rate:
-                    type: number
-                  end_rate:
-                    type: number
-                  percentage_change:
-                    type: number
-                  trend:
-                    type: string
-                    enum: [up, down, same]
-
-    TransactionVolumeResponse:
-      description: Transaction volume statistics for the selected period.
+                $ref: '#/components/schemas/Trend'
+          examples:
+            Example:
+              summary: Example trend comparison
+              value:
+                period: 30d
+                usd_to_lbp:
+                  former_rate: 88500
+                  current_rate: 89700
+                  percentage_change: 1.36
+                  message: The USD-LBP rate has risen by a factor of 1.36% from 88500 to 89700 over the past thirty days.
+                lbp_to_usd:
+                  former_rate: 89500
+                  current_rate: 87800
+                  percentage_change: -1.94
+                  message: The LBP-USD rate has dropped by a factor of 1.94% from 89500 to 87800 over the past thirty days.
+    ExchangeRateVolatilityResponse:
+      description: Exchange rate volatility data for the selected period.
       content:
         application/json:
           schema:
@@ -408,141 +695,139 @@ components:
             properties:
               period:
                 type: string
-              total_transactions:
-                type: integer
               usd_to_lbp:
-                type: object
-                properties:
-                  total_amount:
-                    type: number
-                  transaction_count:
-                    type: integer
+                $ref: '#/components/schemas/Volatility'
               lbp_to_usd:
-                type: object
-                properties:
-                  total_amount:
-                    type: number
-                  transaction_count:
-                    type: integer
-
-    ExchangeRateComparisonResponse:
-      description: Comparison between current and historical exchange rates.
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              current_rate:
-                type: object
-                properties:
-                  usd_to_lbp:
-                    type: number
-                  lbp_to_usd:
-                    type: number
-              historical_rate:
-                type: object
-                properties:
-                  usd_to_lbp:
-                    type: number
-                  lbp_to_usd:
-                    type: number
-              percentage_difference:
-                type: object
-                properties:
-                  usd_to_lbp:
-                    type: number
-                  lbp_to_usd:
-                    type: number
-              trend:
-                type: object
-                properties:
-                  usd_to_lbp:
-                    type: string
-                    enum: [higher, lower, same]
-                  lbp_to_usd:
-                    type: string
-                    enum: [higher, lower, same]
-
-    DailyTransactionVolumeResponse:
-      description: Array of daily transaction volumes between two dates.
+                $ref: '#/components/schemas/Volatility'
+          examples:
+            Example:
+              summary: Example volatility data
+              value:
+                period: 7d
+                usd_to_lbp:
+                  standard_deviation: 1200.45
+                  min_rate: 88500
+                  max_rate: 90200
+                  message: The USD-LBP exchange rate has shown moderate volatility over the past 7 days, ranging from 88500 to 90200.
+                lbp_to_usd:
+                  standard_deviation: 300.4
+                  min_rate: 89700
+                  max_rate: 89100
+                  message: The LBP-USD rate has fluctuated slightly in the past 7 days.
+    DailyExchangeRateResponse:
+      description: Daily average exchange rates.
       content:
         application/json:
           schema:
             type: array
             items:
-              type: object
-              properties:
-                date:
-                  type: string
-                  format: date
-                usd_to_lbp:
-                  type: object
-                  properties:
-                    total_amount:
-                      type: number
-                    transaction_count:
-                      type: integer
-                lbp_to_usd:
-                  type: object
-                  properties:
-                    total_amount:
-                      type: number
-                    transaction_count:
-                      type: integer
+              $ref: '#/components/schemas/Rate'
           examples:
-            example-1:
-              summary: Volume data for a few days
+            Example:
+              summary: Daily exchange rates
+              value:
+                - date: 2025-04-01
+                  usd_to_lbp: null
+                  lbp_to_usd: 89300
+                - date: 2025-04-02
+                  usd_to_lbp: 89400
+                  lbp_to_usd: 89000
+                - date: 2025-04-03
+                  usd_to_lbp: 89500
+                  lbp_to_usd: 89800
+                - date: 2025-04-04
+                  usd_to_lbp: 90100
+                  lbp_to_usd: 89700
+                - date: 2025-04-05
+                  usd_to_lbp: 91200
+                  lbp_to_usd: 90500
+                - date: 2025-04-06
+                  usd_to_lbp: 92400
+                  lbp_to_usd: 91250
+                - date: 2025-04-07
+                  usd_to_lbp: null
+                  lbp_to_usd: 92400
+
+    MonthlyExchangeRateResponse:
+      description: Monthly average exchange rates.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Rate'
+          examples:
+            Example:
+              summary: Monthly exchange rates
+              value:
+                - date: 2024-04-01
+                  usd_to_lbp: null
+                  lbp_to_usd: 89300
+                - date: 2024-05-01
+                  usd_to_lbp: 89400
+                  lbp_to_usd: 89000
+                - date: 2024-06-01
+                  usd_to_lbp: 89500
+                  lbp_to_usd: 89800
+                - date: 2024-07-01
+                  usd_to_lbp: 90100
+                  lbp_to_usd: 89700
+                - date: 2024-08-01
+                  usd_to_lbp: 91200
+                  lbp_to_usd: 90500
+                - date: 2025-09-01
+                  usd_to_lbp: 92400
+                  lbp_to_usd: 91250
+                - date: 2025-10-01
+                  usd_to_lbp: null
+                  lbp_to_usd: 92400
+
+    DailyTransactionVolumeResponse:
+      description: Daily transaction volumes and counts.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Volume'
+          examples:
+            Example:
+              summary: Daily volume data
               value:
                 - date: 2025-04-01
                   usd_to_lbp:
-                    total_amount: 25000
-                    transaction_count: 10
-                  lbp_to_usd:
-                    total_amount: 35000000
-                    transaction_count: 7
-                - date: 2025-04-02
-                  usd_to_lbp:
-                    total_amount: 18000
+                    total_amount: 24000
                     transaction_count: 8
                   lbp_to_usd:
                     total_amount: 20000000
-                    transaction_count: 4
+                    transaction_count: 5
 
-    DailyExchangeRateResponse:
-      description: Array of daily average exchange rates between two dates.
+    MonthlyTransactionVolumeResponse:
+      description: Monthly transaction volumes and counts.
       content:
         application/json:
           schema:
             type: array
             items:
-              type: object
-              properties:
-                date:
-                  type: string
-                  format: date
-                usd_to_lbp:
-                  type:
-                    - number
-                    - 'null'
-                lbp_to_usd:
-                  type:
-                    - number
-                    - 'null'
+              $ref: '#/components/schemas/Volume'
           examples:
-            example-1:
-              summary: Exchange rates for a few days
+            Example:
+              summary: Monthly volume data
               value:
+                - date: 2025-03-01
+                  usd_to_lbp:
+                    total_amount: 150000
+                    transaction_count: 60
+                  lbp_to_usd:
+                    total_amount: 60000000
+                    transaction_count: 40
                 - date: 2025-04-01
-                  usd_to_lbp: 89000
-                  lbp_to_usd: 89500
-                - date: 2025-04-02
-                  usd_to_lbp: 90000
-                  lbp_to_usd: 89200
-                - date: 2025-04-03
-                  usd_to_lbp: null
-                  lbp_to_usd: 89100
-
-
+                  usd_to_lbp:
+                    total_amount: 120000
+                    transaction_count: 50
+                  lbp_to_usd:
+                    total_amount: 48000000
+                    transaction_count: 38
   securitySchemes:
     bearerAuth:
       type: http
