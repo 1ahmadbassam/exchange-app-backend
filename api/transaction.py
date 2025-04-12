@@ -1,11 +1,9 @@
-import traceback
-
 import jwt
 from flask import Blueprint, request, jsonify, abort
 
 from init import db, limiter
 from model.transaction import Transaction, TransactionSchema
-from util import extract_auth_token, decode_token
+from util.token import extract_auth_token, decode_token
 
 transaction_schema = TransactionSchema()
 transactions_schema = TransactionSchema(many=True)
@@ -29,7 +27,6 @@ def add_transaction():
         try:
             user_id = decode_token(token)
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-            traceback.print_exc()
             abort(403)
     transaction = Transaction(usd_amount=usd_amount, lbp_amount=lbp_amount, usd_to_lbp=usd_to_lbp, user_id=user_id)
     db.session.add(transaction)
@@ -46,7 +43,6 @@ def get_all_transactions():
     try:
         user_id = decode_token(token)
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-        traceback.print_exc()
         abort(403)
     transactions = db.session.query(Transaction).filter_by(user_id=user_id).all()
     return jsonify(transactions_schema.dump(transactions)), 200

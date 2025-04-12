@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, abort, request
 
 from init import limiter, db, bcrypt
 from model.user import User, UserSchema
-from util import create_token
+from util.token import create_token
 
 user_bp = Blueprint('user', __name__)
 user_schema = UserSchema()

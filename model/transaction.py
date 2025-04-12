@@ -19,11 +19,12 @@ class Transaction(db.Model):
     __table_args__ = (CheckConstraint('usd_amount > 0', name='usd_amount_positive'),
                       CheckConstraint('lbp_amount > 0', name='lbp_amount_positive'),)
 
-    def __init__(self, usd_amount, lbp_amount, usd_to_lbp, user_id):
+    def __init__(self, usd_amount, lbp_amount, usd_to_lbp, user_id, added_date=datetime.datetime.now(datetime.timezone.utc)):
         super(Transaction, self).__init__(usd_amount=usd_amount,
                                           lbp_amount=lbp_amount, usd_to_lbp=usd_to_lbp,
                                           user_id=user_id,
-                                          added_date=datetime.datetime.now(datetime.timezone.utc))
+                                          added_date=added_date)
+
 
 
 class TransactionSchema(ma.Schema):

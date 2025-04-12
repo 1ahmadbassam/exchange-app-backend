@@ -11,9 +11,9 @@ class User(db.Model):
     user_name: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(128), nullable=False)
 
-    def __init__(self, user_name, password):
+    def __init__(self, user_name, password, hsh=True):
         super(User, self).__init__(user_name=user_name)
-        self.hashed_password = bcrypt.generate_password_hash(password)
+        self.hashed_password = bcrypt.generate_password_hash(password) if hsh else password
 
 
 class UserSchema(ma.Schema):
