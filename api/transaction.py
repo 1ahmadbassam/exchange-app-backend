@@ -101,20 +101,34 @@ def get_monthly_transaction_volume(month: datetime.datetime = None):
 @transaction_bp.route('/transaction', methods=['POST'])
 @limiter.limit("10 per minute")
 def add_transaction():
-    usd_amount = float(request.json['usd_amount'])
-    if usd_amount <= 0:
-        return jsonify({"error": "Invalid amount"}), 400
-    lbp_amount = float(request.json['lbp_amount'])
-    if lbp_amount <= 0:
-        return jsonify({"error": "Invalid amount"}), 400
-    usd_to_lbp = bool(request.json['usd_to_lbp'])
+    if not request.json or 'usd_amount' not in request.json or 'lbp_amount' not in request.json or 'usd_to_lbp' not in request.json:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    try:
+        usd_amount = float(request.json['usd_amount'])
+        if usd_amount <= 0:
+            return jsonify({"error": "Invalid USD amount, must be greater than zero"}), 400
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid USD amount, must be a valid number"}), 400
+
+    try:
+        lbp_amount = float(request.json['lbp_amount'])
+        if lbp_amount <= 0:
+            return jsonify({"error": "Invalid LBP amount, must be greater than zero"}), 400
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid LBP amount, must be a valid number"}), 400
+
+    try:
+        usd_to_lbp = bool(request.json['usd_to_lbp'])
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid usd_to_lbp, must be a boolean value"}), 400
     token = extract_auth_token(request)
     user_id = None
     if token is not None:
         try:
             user_id = decode_token(token)
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-            abort(403)
+            return jsonify({"error": "Invalid or expired token"}), 403
     transaction = Transaction(usd_amount=usd_amount, lbp_amount=lbp_amount, usd_to_lbp=usd_to_lbp, user_id=user_id)
     db.session.add(transaction)
     db.session.commit()
