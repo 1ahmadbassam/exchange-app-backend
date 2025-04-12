@@ -1,5 +1,6 @@
 import statistics
 import datetime
+from dateutil.relativedelta import relativedelta
 
 from flask import Blueprint, jsonify, request
 from init import limiter, db
@@ -19,6 +20,31 @@ def get_exchange_rate(end_date=datetime.datetime.now(datetime.timezone.utc)):
         lbp_to_usd = statistics.mean(map(lambda transact: transact.lbp_amount / transact.usd_amount, db.session.execute(
             db.select(Transaction).filter(Transaction.added_date.between(start_date, end_date),
                                           Transaction.usd_to_lbp == False)).scalars()))
+    except statistics.StatisticsError:
+        lbp_to_usd = None
+    return usd_to_lbp, lbp_to_usd
+
+def get_monthly_exchange_rate(month=datetime.datetime.now(datetime.timezone.utc)):
+    # any day in the month works
+    # special care if the month is the current one
+    # i.e. check for datetime.datetime.now being < than summed
+    usd_to_lbp_rates = []
+    lbp_to_usd_rates = []
+    month = datetime.datetime(month.year, month.month, 1, tzinfo=datetime.timezone.utc)
+    next_month = month + relativedelta(months=1)
+    cur = month + datetime.timedelta(days=1)
+    today = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
+    while cur <= next_month and cur <= today:
+        usd_to_lbp, lbp_to_usd = get_exchange_rate(today - datetime.timedelta(days=1) if cur.date() == today.date() else cur)
+        usd_to_lbp_rates.append(usd_to_lbp)
+        lbp_to_usd_rates.append(lbp_to_usd)
+        cur = cur + datetime.timedelta(days=1)
+    try:
+        usd_to_lbp =  statistics.mean([x for x in usd_to_lbp_rates if x])
+    except statistics.StatisticsError:
+        usd_to_lbp = None
+    try:
+        lbp_to_usd = statistics.mean([x for x in lbp_to_usd_rates if x])
     except statistics.StatisticsError:
         lbp_to_usd = None
     return usd_to_lbp, lbp_to_usd
@@ -81,3 +107,30 @@ def exchange_rate_daily():
             "lbp_to_usd": lbp_to_usd
         })
     return jsonify(rates), 200
+
+@exchange_bp.route('/exchangeRate/monthly', methods=['GET'])
+@limiter.limit("10 per minute")
+def exchange_rate_monthly():
+    start_date = request.args.get("start_date", "").strip()
+    end_date = request.args.get("end_date", "").strip()
+    if not start_date or not end_date:
+        return jsonify({'error': 'start_date and end_date are required'}), 400
+    if start_date > end_date:
+        return jsonify({'error': 'start_date must be before end_date'}), 400
+    try:
+        start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+    except ValueError:
+        return jsonify({'error': 'start_date and end_date are invalid'}), 400
+    rates = []
+
+    while start_date <= end_date:
+        usd_to_lbp, lbp_to_usd = get_monthly_exchange_rate(start_date)
+        rates.append({
+            "date": str(start_date.date()),
+            "usd_to_lbp": usd_to_lbp,
+            "lbp_to_usd": lbp_to_usd
+        })
+        start_date += relativedelta(months=1)
+    return jsonify(rates), 200
+
