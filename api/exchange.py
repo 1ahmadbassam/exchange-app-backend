@@ -14,7 +14,6 @@ exchange_bp = Blueprint('exchange', __name__)
 
 
 def _get_exchange_rate(end_date=datetime.datetime.now(datetime.timezone.utc)):
-    print("[DEBUG] get_exchange_rate")
     start_date = end_date - datetime.timedelta(hours=72)
     try:
         usd_to_lbp = statistics.mean(map(lambda transact: transact.lbp_amount / transact.usd_amount, db.session.execute(
