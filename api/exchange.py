@@ -6,6 +6,8 @@ from flask import Blueprint, jsonify, request
 from init import limiter, db
 from model.transaction import Transaction
 
+MSG = "The {} exchange rate has {} from {} to {} by a factor of {}% over the past {}."
+
 exchange_bp = Blueprint('exchange', __name__)
 
 def get_exchange_rate(end_date=datetime.datetime.now(datetime.timezone.utc)):
@@ -134,3 +136,51 @@ def exchange_rate_monthly():
         start_date += relativedelta(months=1)
     return jsonify(rates), 200
 
+@exchange_bp.route('/exchangeRate/trend', methods=['GET'])
+@limiter.limit("10 per minute")
+def exchange_rate_trend():
+    period = request.args.get("period", "").strip()
+    if not period:
+        return jsonify({'error': 'period is required'}), 400
+    today = datetime.datetime.now(datetime.timezone.utc)
+    if period == "24h":
+        former_date = today - datetime.timedelta(hours=24)
+    elif period == "7d":
+        former_date = today - datetime.timedelta(days=7)
+    elif period == "30d":
+        former_date = today - datetime.timedelta(days=30)
+    elif period == "3mon":
+        former_date = today - relativedelta(months=3)
+    elif period == "6mon":
+        former_date = today - relativedelta(months=6)
+    elif period == "1yr":
+        former_date = today - relativedelta(years=1)
+    else:
+        return jsonify({'error': 'period is invalid'}), 400
+    usd_to_lbp_former, lbp_to_usd_former = get_exchange_rate(former_date)
+    usd_to_lbp, lbp_to_usd = get_exchange_rate(today)
+    if usd_to_lbp and usd_to_lbp_former:
+        usd_to_lbp_delta = 100 * (usd_to_lbp - usd_to_lbp_former) / usd_to_lbp_former
+    else:
+        usd_to_lbp_delta = None
+    if lbp_to_usd and lbp_to_usd_former:
+        lbp_to_usd_delta = 100 * (lbp_to_usd - lbp_to_usd_former) / lbp_to_usd_former
+    else:
+        lbp_to_usd_delta = None
+    return jsonify({
+        "period": period,
+        "usd_to_lbp": {
+            "former_rate": usd_to_lbp_former,
+            "current_rate": usd_to_lbp,
+            "percentage_change": usd_to_lbp_delta,
+            "message": MSG.format("USD-LBP", "risen" if usd_to_lbp_delta > 1e-6 else "fell",
+                                  round(usd_to_lbp_former, 2), round(usd_to_lbp, 2), round(abs(usd_to_lbp_delta), 2), period)
+        },
+        "lbp_to_usd": {
+            "former_rate": lbp_to_usd_former,
+            "current_rate": lbp_to_usd,
+            "percentage_change": lbp_to_usd_delta,
+            "message": MSG.format("LBP-USD", "risen" if lbp_to_usd_delta > 1e-6 else "fell",
+                                  round(lbp_to_usd_former, 2), round(lbp_to_usd, 2), round(abs(lbp_to_usd_delta), 2), period)
+        }
+    })
