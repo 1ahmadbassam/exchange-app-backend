@@ -51,7 +51,7 @@ def populate_transactions(database, period="2yr"):
     wu = False
     while cur >= past:
         for _ in range(random.randint(30, 50)):
-            cur.replace(hour=random.randint(8, 20), minute=random.randint(0, 59), second=random.randint(0, 59),
+            cur = cur.replace(hour=random.randint(8, 20), minute=random.randint(0, 59), second=random.randint(0, 59),
                         microsecond=random.randint(0, 999999))
             transaction = generate_transaction(cur)
             database.session.add(transaction)
@@ -73,7 +73,7 @@ def populate_transactions(database, period="2yr"):
             else:
                 m = random.randint(0, 59)
             # no need to worry about second/millisecond increments
-            cur.replace(hour=h, minute=m, second=random.randint(0, 59), microsecond=random.randint(0, 999999))
+            cur = cur.replace(hour=h, minute=m, second=random.randint(0, 59), microsecond=random.randint(0, 999999))
             transaction = generate_transaction(cur)
             database.session.add(transaction)
         database.session.commit()
