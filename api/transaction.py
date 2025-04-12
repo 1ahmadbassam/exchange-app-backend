@@ -106,14 +106,14 @@ def add_transaction():
 
     try:
         usd_amount = float(request.json['usd_amount'])
-        if usd_amount <= 0:
+        if usd_amount <= 1e-6:
             return jsonify({"error": "Invalid USD amount, must be greater than zero"}), 400
     except (ValueError, TypeError):
         return jsonify({"error": "Invalid USD amount, must be a valid number"}), 400
 
     try:
         lbp_amount = float(request.json['lbp_amount'])
-        if lbp_amount <= 0:
+        if lbp_amount <= 1e-6:
             return jsonify({"error": "Invalid LBP amount, must be greater than zero"}), 400
     except (ValueError, TypeError):
         return jsonify({"error": "Invalid LBP amount, must be a valid number"}), 400
