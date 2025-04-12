@@ -3,10 +3,12 @@ from init import app, db
 from api.user import user_bp
 from api.transaction import transaction_bp
 from api.exchange import exchange_bp
+from api.offer import offer_bp
 
 app.register_blueprint(user_bp)
 app.register_blueprint(transaction_bp)
 app.register_blueprint(exchange_bp)
+app.register_blueprint(offer_bp)
 
 if __name__ == "__main__":
     with app.app_context():
