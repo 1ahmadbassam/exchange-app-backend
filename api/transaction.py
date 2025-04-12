@@ -2,7 +2,7 @@ import datetime
 
 import jwt
 from dateutil.relativedelta import relativedelta
-from flask import Blueprint, request, jsonify, abort
+from flask import Blueprint, request, jsonify
 
 from init import db, limiter
 from model.transaction import Transaction, TransactionSchema
@@ -140,11 +140,11 @@ def add_transaction():
 def get_all_transactions():
     token = extract_auth_token(request)
     if not token:
-        abort(403)
+        return jsonify({"error": "Invalid or expired token"}), 403
     try:
         user_id = decode_token(token)
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-        abort(403)
+        return jsonify({"error": "Invalid or expired token"}), 403
     transactions = db.session.query(Transaction).filter_by(user_id=user_id).all()
     return jsonify(transactions_schema.dump(transactions)), 200
 
