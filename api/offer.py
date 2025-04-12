@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify
 
 from init import limiter, db
 from model.offer import Offer, OfferSchema
+from model.transaction import Transaction
 from util.token import extract_auth_token, decode_token
 
 offer_bp = Blueprint('offer', __name__)
@@ -126,5 +127,52 @@ def update_offer():
     if phone_number is not None:
         phone_number = phone_number.strip()
         offer.phone_number = phone_number
+    db.session.commit()
+    return jsonify(offer_schema.dump(offer)), 200
+
+
+@offer_bp.route('/offer/available', methods=['GET'])
+@limiter.limit("10 per minute")
+def get_available_offers():
+    offers = db.session.query(Offer).filter_by(available=True).all()
+    return jsonify(offers_schema.dump(offers)), 200
+
+
+@offer_bp.route('/offer/my', methods=['GET'])
+@limiter.limit("10 per minute")
+def get_my_offers():
+    token = extract_auth_token(request)
+    if not token:
+        return jsonify({"error": "Invalid or expired token"}), 403
+    try:
+        user_id = decode_token(token)
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        return jsonify({"error": "Invalid or expired token"}), 403
+    offers = db.session.query(Offer).filter_by(user_id=user_id).all()
+    return jsonify(offers_schema.dump(offers)), 200
+
+
+@offer_bp.route('/offer/accept', methods=['POST'])
+@limiter.limit("10 per minute")
+def accept_offer():
+    try:
+        token = extract_auth_token(request)
+        if not token:
+            raise jwt.InvalidTokenError
+        user_id = decode_token(token)
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        return jsonify({"error": "Invalid or expired token"}), 403
+    offer_id = request.json.get('offer_id', None)
+    if offer_id is None:
+        return jsonify({"error": "Missing required fields"}), 400
+    offer = Offer.query.get(offer_id)
+    if offer is None:
+        return jsonify({"error": "Invalid offer input"}), 400
+    if offer.user_id == int(user_id):
+        return jsonify({"error": "Invalid offer input - cannot accept own offer"}), 400
+    offer.available = False
+    transaction = Transaction(usd_amount=offer.usd_amount, lbp_amount=offer.lbp_amount, usd_to_lbp=offer.usd_to_lbp,
+                              user_id=user_id)
+    db.session.add(transaction)
     db.session.commit()
     return jsonify(offer_schema.dump(offer)), 200
