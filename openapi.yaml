@@ -321,7 +321,7 @@ paths:
                   summary: Internal Error
                   value:
                     error: Internal server error
-  /transactions/volume/daily:
+  /transaction/volume/daily:
     get:
       summary: Get daily transaction volume
       description: >
@@ -383,7 +383,7 @@ paths:
                   summary: Internal Error
                   value:
                     error: Internal server error
-  /transactions/volume/monthly:
+  /transaction/volume/monthly:
     get:
       summary: Get monthly transaction volumes
       description: >
