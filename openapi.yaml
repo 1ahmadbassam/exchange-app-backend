@@ -93,8 +93,9 @@ paths:
     post:
       summary: Register a new user
       tags: [ User Management ]
-      description: |2
-          Registers a new user with a unique username and password. The username must not already be taken, the password is hashed and securely stored. This route does not require authentication.
+      description: |
+        Registers a new user with a unique username and password. The username must not already be taken, the password is hashed and securely stored. This route does not require authentication.
+        The password must meet the following criteria: at least 12 characters long, with at least 2 uppercase letters, 2 numbers, and a symbol. The password's strength is evaluated with a minimum permissible score of 0.4 and a minimum permissible entropy of 70 bits.
       operationId: createUser
       requestBody:
         $ref: '#/components/requestBodies/User'
@@ -114,6 +115,55 @@ paths:
                   summary: Missing or invalid fields
                   value:
                     error: Invalid input format
+        '403':
+          $ref: '#/components/responses/WeakPasswordResponse'
+  /password-strength:
+    post:
+      summary: Check the strength of a password
+      tags:
+        - User Management
+      description: |
+        Checks the strength of a given password and returns a strength score or a classification.
+        The strength is calculated based on factors like length, use of special characters, numbers, uppercase letters, etc.
+        The strength of a password is reported from 0 to 1.
+      operationId: checkPasswordStrength
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+                  description: The password to check
+            examples:
+              Example:
+                summary: Request example
+                value:
+                  password: "P@ssw0rd123"
+      responses:
+        '200':
+          $ref: '#/components/responses/PasswordStrengthResponse'
+        '400':
+          description: Invalid or missing query parameter.
+          content:
+            application/json:
+              examples:
+                InvalidQuery:
+                  summary: Invalid Query
+                  value:
+                    error: Bad request
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              examples:
+                InternalError:
+                  summary: Internal Error
+                  value:
+                    error: Internal server error
   /transaction:
     post:
       summary: Submit a new LBP-USD or USD-LBP exchange transaction
@@ -127,8 +177,8 @@ paths:
         will be rejected.
       operationId: addTransaction
       security:
-        - bearerAuth: []
-        - {}
+        - bearerAuth: [ ]
+        - { }
       requestBody:
         $ref: '#/components/requestBodies/Transaction'
       responses:
@@ -162,7 +212,7 @@ paths:
         provided in the Authorization header.
       operationId: getUserTransactions
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       responses:
         '200':
           $ref: '#/components/responses/TransactionList'
@@ -985,11 +1035,11 @@ components:
             type: object
             properties:
               usd_to_lbp:
-                type:             
+                type:
                   - integer
                   - 'null'
               lbp_to_usd:
-                type: 
+                type:
                   - integer
                   - 'null'
           examples:
@@ -1003,9 +1053,8 @@ components:
         application/json:
           schema:
             type: object
-            properties:
-              # restore the original period
-              period: 
+            properties: # restore the original period
+              period:
                 type: string
               usd_to_lbp:
                 $ref: '#/components/schemas/Trend'
@@ -1315,6 +1364,58 @@ components:
                 user_id: 3
                 available: false
                 created_at: "2025-04-10T12:00:00Z"
+    PasswordStrengthResponse:
+      description: Password strength evaluation result
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              strength_score:
+                type: number
+                description: A score representing the strength of the password (higher is stronger)
+              classification:
+                type: string
+                enum: [ "Weak", "Moderate", "Strong" ]
+                description: A textual classification of the password strength (e.g., "Weak", "Strong")
+          examples:
+            WeakExample:
+              summary: Weak password strength example
+              value:
+                strength_score: 0.4
+                classification: "Weak"
+            ModerateExample:
+              summary: Moderate password strength example
+              value:
+                strength_score: 0.65
+                classification: "Moderate"
+            StrongExample:
+              summary: Strong password strength example
+              value:
+                strength_score: 0.85
+                classification: "Strong"
+    WeakPasswordResponse:
+      description: Password complexity test verification fail
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                value: Invalid password
+              tests:
+                type: array
+                description: Tests which have failed to pass
+                items:
+                  type: string
+          examples:
+            Example:
+              summary: Password too short
+              value:
+                error: Invalid password
+                tests:
+                  - Password must be at least 12 characters long
   securitySchemes:
     bearerAuth:
       type: http
