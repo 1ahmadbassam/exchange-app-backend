@@ -1,10 +1,12 @@
 from flask import Blueprint, jsonify, request
 from password_strength import PasswordPolicy, PasswordStats
 from password_strength.tests import Uppercase, Length, Numbers, Special, Strength, EntropyBits
+from email_validator import validate_email, EmailNotValidError
 
 from init import limiter, db, bcrypt
 from model.user import User, UserSchema
 from util.token import create_token
+from util.user import USER_FORBIDDEN_CHARACTERS, PASSWORD_FORBIDDEN_CHARACTERS
 
 policy = PasswordPolicy.from_names(
     length=12,
@@ -43,23 +45,43 @@ user_schema = UserSchema()
 @limiter.limit("10 per minute")
 def create_user():
     user_name = request.json.get('user_name', '').strip()
+    email = request.json.get('email', '').strip()
     password = request.json.get('password', '').strip()
 
-    if not user_name or not password:
+    if not user_name or not password or not email:
         return jsonify({"error": "Missing required fields"}), 400
 
+    for char in USER_FORBIDDEN_CHARACTERS:
+        if char in user_name:
+            return jsonify({"error": "Forbidden character in username '" + char + "'"}), 400
+
+    for char in PASSWORD_FORBIDDEN_CHARACTERS:
+        if char in password:
+            return jsonify({"error": "Forbidden character in password '" + char + "'"}), 400
+
+    if db.session.execute(db.select(User).filter_by(user_name=user_name)).scalar():
+        return jsonify({"error": "User already exists"}), 400
+    if len(user_name) > 30:
+        return jsonify({"error": "Username too long"}), 400
+
+    # check if email is valid
+    try:
+        validated_email = validate_email(email)
+    except EmailNotValidError as e:
+        return jsonify({"error": "Email not valid: " + str(e)}), 400
+
+    email = validated_email.normalized
+
+    if db.session.execute(db.select(User).filter_by(email=email)).scalar():
+        return jsonify({"error": "Email already registered"}), 400
+
+    # check if password meets complexity requirements
     test = test_password(password)
     if test:
         return jsonify({"error": "Invalid password",
                         "tests": test}), 403
 
-    if db.session.execute(db.select(User).filter_by(user_name=user_name)).scalar():
-        return jsonify({"error": "User already exists"}), 400
-
-    if len(user_name) > 30:
-        return jsonify({"error": "Username too long"}), 400
-
-    user = User(user_name=user_name, password=password)
+    user = User(user_name=user_name, password=password, email=email)
     db.session.add(user)
     db.session.commit()
     return jsonify(user_schema.dump(user)), 200

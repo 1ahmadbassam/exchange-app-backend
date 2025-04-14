@@ -901,6 +901,7 @@ components:
             type: object
             required:
               - user_name
+              - email
               - password
             properties:
               user_name:
@@ -908,10 +909,14 @@ components:
                 maxLength: 30
               password:
                 type: string
+              email:
+                type: string
+                maxLength: 128
           examples:
             Example:
               value:
                 user_name: ahmadb
+                email: aae112@mail.aub.edu
                 password: mySecurePassword123
     Authentication:
       required: true
