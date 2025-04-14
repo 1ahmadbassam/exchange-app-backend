@@ -10,7 +10,7 @@ from flask_marshmallow import Marshmallow
 from flask_sqlalchemy import SQLAlchemy
 
 load_dotenv()
-from db_config import DB_CONFIG
+from util.db_config import DB_CONFIG
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_CONFIG

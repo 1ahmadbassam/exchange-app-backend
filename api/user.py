@@ -5,7 +5,7 @@ from email_validator import validate_email, EmailNotValidError
 
 from init import limiter, db, bcrypt
 from model.user import User, UserSchema
-from util.token import create_token
+from util.token import create_jwt
 from util.user import USER_FORBIDDEN_CHARACTERS, PASSWORD_FORBIDDEN_CHARACTERS
 
 policy = PasswordPolicy.from_names(
@@ -101,7 +101,7 @@ def authenticate_user():
     if not user or not bcrypt.check_password_hash(user.hashed_password, password):
         return jsonify({"error": "Invalid or expired token"}), 403
 
-    token = create_token(user.id)
+    token = create_jwt(user.id)
     return jsonify({"token": token}), 200
 
 

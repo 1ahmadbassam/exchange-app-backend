@@ -7,7 +7,7 @@ from flask import Blueprint, request, jsonify
 from init import db, limiter
 from model.transaction import Transaction, TransactionSchema
 from model.volume import DailyVolume, MonthlyVolume
-from util.token import extract_auth_token, decode_token
+from util.token import extract_auth_jwt, decode_jwt
 
 transaction_schema = TransactionSchema()
 transactions_schema = TransactionSchema(many=True)
@@ -122,11 +122,11 @@ def add_transaction():
         usd_to_lbp = bool(request.json['usd_to_lbp'])
     except (ValueError, TypeError):
         return jsonify({"error": "Invalid usd_to_lbp, must be a boolean value"}), 400
-    token = extract_auth_token(request)
+    token = extract_auth_jwt(request)
     user_id = None
     if token is not None:
         try:
-            user_id = decode_token(token)
+            user_id = decode_jwt(token)
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
             return jsonify({"error": "Invalid or expired token"}), 403
     transaction = Transaction(usd_amount=usd_amount, lbp_amount=lbp_amount, usd_to_lbp=usd_to_lbp, user_id=user_id)
@@ -138,11 +138,11 @@ def add_transaction():
 @transaction_bp.route('/transaction', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_all_transactions():
-    token = extract_auth_token(request)
+    token = extract_auth_jwt(request)
     if not token:
         return jsonify({"error": "Invalid or expired token"}), 403
     try:
-        user_id = decode_token(token)
+        user_id = decode_jwt(token)
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return jsonify({"error": "Invalid or expired token"}), 403
     transactions = db.session.query(Transaction).filter_by(user_id=user_id).all()

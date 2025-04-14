@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify
 from init import limiter, db
 from model.offer import Offer, OfferSchema
 from model.transaction import Transaction
-from util.token import extract_auth_token, decode_token
+from util.token import extract_auth_jwt, decode_jwt
 
 offer_bp = Blueprint('offer', __name__)
 offer_schema = OfferSchema()
@@ -15,10 +15,10 @@ offers_schema = OfferSchema(many=True)
 @limiter.limit("10 per minute")
 def add_offer():
     try:
-        token = extract_auth_token(request)
+        token = extract_auth_jwt(request)
         if not token:
             raise jwt.InvalidTokenError
-        user_id = decode_token(token)
+        user_id = decode_jwt(token)
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return jsonify({"error": "Invalid or expired token"}), 403
     usd_amount = request.json.get('usd_amount', None)
@@ -57,10 +57,10 @@ def add_offer():
 @limiter.limit("10 per minute")
 def delete_offer():
     try:
-        token = extract_auth_token(request)
+        token = extract_auth_jwt(request)
         if not token:
             raise jwt.InvalidTokenError
-        user_id = decode_token(token)
+        user_id = decode_jwt(token)
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return jsonify({"error": "Invalid or expired token"}), 403
     offer_id = request.json.get('offer_id', None)
@@ -80,10 +80,10 @@ def delete_offer():
 @limiter.limit("10 per minute")
 def update_offer():
     try:
-        token = extract_auth_token(request)
+        token = extract_auth_jwt(request)
         if not token:
             raise jwt.InvalidTokenError
-        user_id = decode_token(token)
+        user_id = decode_jwt(token)
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return jsonify({"error": "Invalid or expired token"}), 403
     offer_id = request.json.get('offer_id', None)
@@ -141,11 +141,11 @@ def get_available_offers():
 @offer_bp.route('/offer/my', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_my_offers():
-    token = extract_auth_token(request)
+    token = extract_auth_jwt(request)
     if not token:
         return jsonify({"error": "Invalid or expired token"}), 403
     try:
-        user_id = decode_token(token)
+        user_id = decode_jwt(token)
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return jsonify({"error": "Invalid or expired token"}), 403
     offers = db.session.query(Offer).filter_by(user_id=user_id).all()
@@ -156,10 +156,10 @@ def get_my_offers():
 @limiter.limit("10 per minute")
 def accept_offer():
     try:
-        token = extract_auth_token(request)
+        token = extract_auth_jwt(request)
         if not token:
             raise jwt.InvalidTokenError
-        user_id = decode_token(token)
+        user_id = decode_jwt(token)
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return jsonify({"error": "Invalid or expired token"}), 403
     offer_id = request.json.get('offer_id', None)
