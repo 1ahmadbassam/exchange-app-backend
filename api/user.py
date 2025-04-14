@@ -91,7 +91,7 @@ def create_user():
     # generate and send verification token
     token = generate_verification_token(email)
     confirm_url = url_for("user.verify_user", token=token, _external=True)
-    html = render_template("verify.html", confirm_url=confirm_url)
+    html = render_template("verify_mail.html", confirm_url=confirm_url)
     subject = "LBP Exchange Tracker - Confirm your email"
     send_email(user.email, subject, html)
 
@@ -123,7 +123,7 @@ def resend_verify_user():
     # generate and send verification token
     token = generate_verification_token(email)
     confirm_url = url_for("verify_user", token=token, _external=True)
-    html = render_template("verify.html", confirm_url=confirm_url)
+    html = render_template("verify_mail.html", confirm_url=confirm_url)
     subject = "LBP Exchange Tracker - Confirm your email"
     send_email(email, subject, html)
 
@@ -146,7 +146,54 @@ def verify_user(token):
     db.session.add(user)
     db.session.delete(u_user)
     db.session.commit()
-    return render_template("verified.html"), 200
+    return render_template("verify.html"), 200
+
+
+@user_bp.route("/reset", methods=['POST'])
+@limiter.limit("10 per minute")
+def password_reset_request():
+    email = request.json.get('email', '').strip()
+    if not not email:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    # check if email is valid
+    try:
+        validated_email = validate_email(email)
+    except EmailNotValidError as e:
+        return jsonify({"error": "Email not valid: " + str(e)}), 400
+
+    email = validated_email.normalized
+
+    user = db.session.query(User).filter_by(email=email).scalar()
+    if not user:
+        user = db.session.query(UnconfirmedUser).filter_by(email=email).scalar()
+        if not user:
+            return jsonify({"error": "Email not valid"}), 403
+    if not user.can_change_password():
+        return jsonify({"error": "Password changed recently. Please wait at least one hour since you last changed your password"}), 400
+
+    # generate and send verification token
+    token = generate_verification_token(email)
+    confirm_url = url_for("verify_user", token=token, _external=True)
+    html = render_template("reset_mail.html", confirm_url=confirm_url)
+    subject = "LBP Exchange Tracker - Reset your password"
+    send_email(email, subject, html)
+    return '', 200
+
+
+@user_bp.route("/reset/<token>")
+@limiter.limit("10 per minute")
+def password_reset(token):
+    valid, email = confirm_verification_token(token)
+    if not valid:
+        return jsonify({"error": email}), 403
+    user = db.session.query(User).filter_by(email=email).scalar()
+    if not user:
+        user = db.session.query(UnconfirmedUser).filter_by(email=email).scalar()
+        if not user:
+            return jsonify({"error": "Email not valid"}), 403
+
+
 
 
 @user_bp.route('/authentication', methods=['POST'])
