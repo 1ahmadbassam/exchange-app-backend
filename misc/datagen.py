@@ -12,7 +12,7 @@ const_pass = bcrypt.generate_password_hash("123")
 
 
 def generate_user(user_name):
-    user = User(user_name=user_name, password=const_pass, hsh=False)
+    user = User(user_name=user_name, password=const_pass, email=user_name, hsh=False)
     db.session.add(user)
     db.session.commit()
 
