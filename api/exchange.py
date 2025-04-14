@@ -7,9 +7,7 @@ from flask import Blueprint, jsonify, request
 from init import limiter, db
 from model.rate import DailyRate, MonthlyRate
 from model.transaction import Transaction
-
-TREND_MSG = "The {} exchange rate has {} from {} to {} by a factor of {}% over the past {}."
-VOLATILITY_MSG = "The {} exchange rate varied {} and ranged between {} and {} over the past {}. "
+from util.exchange import VOLATILITY_MSG, TREND_MSG
 
 exchange_bp = Blueprint('exchange', __name__)
 
