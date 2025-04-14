@@ -1,11 +1,12 @@
-from flask import Blueprint, jsonify, request
+from email_validator import validate_email, EmailNotValidError
+from flask import Blueprint, jsonify, request, url_for, render_template
 from password_strength import PasswordPolicy, PasswordStats
 from password_strength.tests import Uppercase, Length, Numbers, Special, Strength, EntropyBits
-from email_validator import validate_email, EmailNotValidError
 
 from init import limiter, db, bcrypt
-from model.user import User, UserSchema
-from util.token import create_jwt
+from model.user import User, UserSchema, UnconfirmedUser
+from util.mail import send_email
+from util.token import create_jwt, confirm_verification_token, generate_verification_token
 from util.user import USER_FORBIDDEN_CHARACTERS, PASSWORD_FORBIDDEN_CHARACTERS
 
 policy = PasswordPolicy.from_names(
@@ -59,7 +60,8 @@ def create_user():
         if char in password:
             return jsonify({"error": "Forbidden character in password '" + char + "'"}), 400
 
-    if db.session.execute(db.select(User).filter_by(user_name=user_name)).scalar():
+    if (db.session.execute(db.select(User).filter_by(user_name=user_name)).scalar()
+            or db.session.execute(db.select(UnconfirmedUser).filter_by(user_name=user_name)).scalar()):
         return jsonify({"error": "User already exists"}), 400
     if len(user_name) > 30:
         return jsonify({"error": "Username too long"}), 400
@@ -72,7 +74,8 @@ def create_user():
 
     email = validated_email.normalized
 
-    if db.session.execute(db.select(User).filter_by(email=email)).scalar():
+    if (db.session.execute(db.select(User).filter_by(email=email)).scalar()
+            or (db.session.execute(db.select(UnconfirmedUser).filter_by(email=email)).scalar())):
         return jsonify({"error": "Email already registered"}), 400
 
     # check if password meets complexity requirements
@@ -81,10 +84,69 @@ def create_user():
         return jsonify({"error": "Invalid password",
                         "tests": test}), 403
 
-    user = User(user_name=user_name, password=password, email=email)
+    user = UnconfirmedUser(user_name=user_name, password=password, email=email)
     db.session.add(user)
     db.session.commit()
-    return jsonify(user_schema.dump(user)), 200
+
+    # generate and send verification token
+    token = generate_verification_token(email)
+    confirm_url = url_for("user.verify_user", token=token, _external=True)
+    html = render_template("verify.html", confirm_url=confirm_url)
+    subject = "LBP Exchange Tracker - Confirm your email"
+    send_email(user.email, subject, html)
+
+    return jsonify({"error": "Email verification required"}), 401
+
+
+@user_bp.route("/verify", methods=['POST'])
+@limiter.limit("10 per minute")
+def resend_verify_user():
+    email = request.json.get('email', '').strip()
+    if not not email:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    # check if email is valid
+    try:
+        validated_email = validate_email(email)
+    except EmailNotValidError as e:
+        return jsonify({"error": "Email not valid: " + str(e)}), 400
+
+    email = validated_email.normalized
+
+    u_user = db.query(UnconfirmedUser).filter_by(email=email).scalar()
+    if not u_user:
+        if db.session.query(User).filter_by(user_name=email).scalar():
+            return jsonify({"error": "Email already verified"}), 400
+        else:
+            return jsonify({"error": "Email not valid"}), 403
+
+    # generate and send verification token
+    token = generate_verification_token(email)
+    confirm_url = url_for("verify_user", token=token, _external=True)
+    html = render_template("verify.html", confirm_url=confirm_url)
+    subject = "LBP Exchange Tracker - Confirm your email"
+    send_email(email, subject, html)
+
+    return jsonify({"error": "Email verification required"}), 401
+
+
+@user_bp.route("/verify/<token>")
+@limiter.limit("10 per minute")
+def verify_user(token):
+    valid, email = confirm_verification_token(token)
+    if not valid:
+        return jsonify({"error": email}), 403
+    u_user = db.session.query(UnconfirmedUser).filter_by(email=email).scalar()
+    if not u_user:
+        if db.session.query(User).filter_by(user_name=email).scalar():
+            return jsonify({"error": "Email already verified"}), 400
+        else:
+            return jsonify({"error": "Email not valid"}), 403
+    user = User(user_name=u_user.user_name, password=u_user.hashed_password, email=email, hsh=False)
+    db.session.add(user)
+    db.session.delete(u_user)
+    db.session.commit()
+    return render_template("verified.html"), 200
 
 
 @user_bp.route('/authentication', methods=['POST'])
