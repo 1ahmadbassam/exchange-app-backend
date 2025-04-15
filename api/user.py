@@ -1,16 +1,18 @@
+import jwt
 from email_validator import validate_email, EmailNotValidError
 from flask import Blueprint, jsonify, request, url_for, render_template
 from password_strength import PasswordPolicy, PasswordStats
 from password_strength.tests import Uppercase, Length, Numbers, Special, Strength, EntropyBits
 
 from init import limiter, db, bcrypt
-from model.user import User, UserSchema, UnconfirmedUser
+from model.user import User, UserSchema, UnconfirmedUser, UnconfirmedUserSchema
 from util.mail import send_email
-from util.token import create_jwt, confirm_verification_token, generate_verification_token
+from util.token import create_jwt, confirm_verification_token, generate_verification_token, extract_auth_jwt, decode_jwt
 from util.user import USER_FORBIDDEN_CHARACTERS, PASSWORD_FORBIDDEN_CHARACTERS
 
 user_bp = Blueprint('user', __name__)
 user_schema = UserSchema()
+u_user_schema = UnconfirmedUserSchema()
 
 policy = PasswordPolicy.from_names(
     length=12,
@@ -39,6 +41,22 @@ def test_password(password):
         elif type(test) == EntropyBits:
             hh.append("Password does not have enough variability.")
     return hh
+
+
+@user_bp.route('/user', methods=['GET'])
+@limiter.limit("10 per minute")
+def get_user():
+    token = extract_auth_jwt(request)
+    if not token:
+        return jsonify({"error": "Invalid or expired token"}), 403
+    try:
+        user_id = decode_jwt(token)
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        return jsonify({"error": "Invalid or expired token"}), 403
+    user = db.session.query(User).filter_by(id=user_id).first()
+    if not user:
+        return jsonify({"error": "Invalid or expired token"}), 403
+    return jsonify(user_schema.dump(user)), 200
 
 
 @user_bp.route('/user', methods=['POST'])
@@ -83,8 +101,8 @@ def create_user():
         return jsonify({"error": "Invalid password",
                         "tests": test}), 403
 
-    user = UnconfirmedUser(user_name=user_name, password=password, email=email)
-    db.session.add(user)
+    u_user = UnconfirmedUser(user_name=user_name, password=password, email=email)
+    db.session.add(u_user)
     db.session.commit()
 
     # generate and send verification token
@@ -92,9 +110,9 @@ def create_user():
     confirm_url = url_for("user.verify_user", token=token, _external=True)
     html = render_template("verify_mail.html", confirm_url=confirm_url)
     subject = "LBP Exchange Tracker - Confirm your email"
-    send_email(user.email, subject, html)
+    send_email(u_user.email, subject, html)
 
-    return jsonify({"error": "Email verification required"}), 401
+    return jsonify(u_user_schema.dump(u_user)), 200
 
 
 @user_bp.route("/verify", methods=['POST'])
@@ -112,7 +130,7 @@ def resend_verify_user():
 
     email = validated_email.normalized
 
-    u_user = db.query(UnconfirmedUser).filter_by(email=email).scalar()
+    u_user = db.session.query(UnconfirmedUser).filter_by(email=email).scalar()
     if not u_user:
         if db.session.query(User).filter_by(user_name=email).scalar():
             return jsonify({"error": "Email already verified"}), 400
@@ -126,7 +144,7 @@ def resend_verify_user():
     subject = "LBP Exchange Tracker - Confirm your email"
     send_email(email, subject, html)
 
-    return jsonify({"error": "Email verification required"}), 401
+    return jsonify(u_user_schema.dump(u_user)), 200
 
 
 @user_bp.route("/verify/<token>", methods=['GET'])
@@ -244,7 +262,7 @@ def authenticate_user():
     user = db.session.execute(db.select(User).filter_by(user_name=user_name)).scalar()
 
     if not user or not bcrypt.check_password_hash(user.hashed_password, password):
-        return jsonify({"error": "Invalid or expired token"}), 403
+        return jsonify({"error": "Invalid credentials"}), 403
 
     token = create_jwt(user.id)
     return jsonify({"token": token}), 200

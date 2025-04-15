@@ -51,6 +51,8 @@ tags:
     description: "Endpoints related to transactions between USD and LBP."
   - name: "User Management"
     description: "Endpoints for user registration, authentication, and user-specific data."
+  - name: "Internal User Management"
+    description: "Internal endpoints for user registration, authentication, and user-specific data."
   - name: "Exchange Offers"
     description: "Endpoints for managing peer-to-peer exchange offers between users."
 servers:
@@ -90,12 +92,46 @@ paths:
                   value:
                     error: Invalid username or password
   /user:
+    get:
+      summary: Retrieve the authenticated user's details
+      tags: [ User Management ]
+      description: |
+        This endpoint retrieves the details of the authenticated user. The user must provide a valid JWT token in the 
+        Authorization header. If the token is valid, the user details are returned. If the token is invalid or expired, 
+        an error response is provided.
+      operationId: getUser
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: User details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              examples:
+                Success:
+                  summary: Successfully fetched user details
+                  value:
+                    id: 10
+                    user_name: "ahmadb"
+                    email: "aae112@mail.aub.edu"
+        '403':
+          description: Invalid or expired token
+          content:
+            application/json:
+              examples:
+                InvalidToken:
+                  summary: Invalid or expired token
+                  value:
+                    error: "Invalid or expired token"
     post:
       summary: Register a new user
       tags: [ User Management ]
       description: |
         Registers a new user with a unique username and password. The username must not already be taken, the password is hashed and securely stored. This route does not require authentication.
         The password must meet the following criteria: at least 12 characters long, with at least 2 uppercase letters, 2 numbers, and a symbol. The password's strength is evaluated with a minimum permissible score of 0.4 and a minimum permissible entropy of 70 bits.
+        Email verification is required for users to use the platform. A verification email will be sent if no other errors are encountered, and the user does not exist on the system until his email address is verified.
       operationId: createUser
       requestBody:
         $ref: '#/components/requestBodies/User'
@@ -115,6 +151,226 @@ paths:
                   summary: Missing or invalid fields
                   value:
                     error: Invalid input format
+                InvalidEmail:
+                  summary: Invalid email format
+                  value:
+                    error: Email not valid
+                EmailAlreadyRegistered:
+                  summary: Email is already registered
+                  value:
+                    error: Email already registered
+      '403':
+        $ref: '#/components/responses/WeakPasswordResponse'
+  /verify:
+    post:
+      summary: Resend email verification link
+      tags: [ User Management ]
+      description: |
+        Resends the email verification link to the specified email address.
+        The email should be the one used during user registration. If the email is valid and unconfirmed,
+        a new verification email will be sent to the user.
+      operationId: resendVerifyUser
+      requestBody:
+        content:
+          application/json:
+            required: true
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  description: The email address to resend the verification link to.
+            examples:
+              Example:
+                summary: Resend verification email
+                value:
+                  email: "aae112@mail.aub.edu"
+      responses:
+        '200':
+          $ref: '#/components/responses/UserVerifyRequested'
+        '400':
+          description: Missing or invalid email address.
+          content:
+            application/json:
+              examples:
+                InvalidEmail:
+                  summary: Invalid email format
+                  value:
+                    error: Email not valid
+        '403':
+          description: Email is already verified or invalid email.
+          content:
+            application/json:
+              examples:
+                EmailAlreadyVerified:
+                  summary: Email is already verified
+                  value:
+                    error: Email already verified
+                InvalidEmail:
+                  summary: Email is not found
+                  value:
+                    error: Email not valid
+  /verify/{token}:
+    get:
+      summary: Verify user email using token
+      tags: [ Internal User Management ]
+      description: |
+        This endpoint validates the verification token sent to the user’s email. If valid, the user is marked as confirmed.
+        It also checks if the user is already verified, and if not, it confirms the user and adds him to the database.
+      operationId: verifyUser
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The verification token received in the user's email.
+      responses:
+        '200':
+          description: User successfully verified
+        '400':
+          description: User already verified
+          content:
+            application/json:
+              examples:
+                UserAlreadyVerified:
+                  summary: User already verified
+                  value:
+                    error: "Email already verified"
+        '403':
+          description: Invalid or expired token or invalid email
+          content:
+            application/json:
+              examples:
+                InvalidToken:
+                  summary: Invalid or expired verification token
+                  value:
+                    error: "Invalid or expired verification token"
+                InvalidEmail:
+                  summary: Email not valid
+                  value:
+                    error: "Email not valid"
+  /reset:
+    post:
+      summary: Request password reset email
+      tags: [ User Management ]
+      description: |
+        Allows the user to request a password reset email. The email address provided will receive a link to reset the password.
+      operationId: passwordResetRequest
+      requestBody:
+        $ref: '#/components/requestBodies/PasswordResetRequest'
+      responses:
+        '200':
+          description: Password reset request was successful
+        '400':
+          description: Missing or invalid email address, or password changed recently
+          content:
+            application/json:
+              examples:
+                MissingFields:
+                  summary: Missing email
+                  value:
+                    error: Missing required fields
+                InvalidEmail:
+                  summary: Invalid email format
+                  value:
+                    error: Email not valid
+                PasswordRecentlyChanged:
+                  summary: Password changed recently
+                  value:
+                    error: Password changed recently. Please wait at least one hour since you last changed your password.
+        '403':
+          description: Email address not registered or unable to process the request
+          content:
+            application/json:
+              examples:
+                EmailNotFound:
+                  summary: Email not found in the system
+                  value:
+                    error: Email not valid
+  /reset/{token}:
+    get:
+      summary: Show password reset form
+      tags: [ Internal User Management ]
+      description: |
+        Validates the password reset token and shows the form where the user can reset their password.
+      operationId: passwordResetForm
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The password reset token received via email.
+      responses:
+        '200':
+          description: Show password reset HTML form
+        '403':
+          description: |
+            Show error HTML page: Invalid or expired token
+    post:
+      summary: Reset user password
+      tags: [ Internal User Management ]
+      description: |
+        Allows the user to reset their password using the token provided. The new password must meet the 
+        password complexity requirements. The password must meet the following criteria: at least 12 characters long, 
+        with at least 2 uppercase letters, 2 numbers, and a symbol. The password's strength is evaluated with a minimum 
+        permissible score of 0.4 and a minimum permissible entropy of 70 bits.
+        Unconfirmed users are also allowed to reset their password.
+      operationId: passwordReset
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The password reset token received via email. Passed to the HTML page link in the original GET response.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+                  description: The new password to set.
+            examples:
+              Example:
+                summary: Reset password request
+                value:
+                  password: "newSecurePassword123!"
+      responses:
+        '200':
+          description: Password successfully reset
+          content:
+            application/json:
+              examples:
+                PasswordResetSuccess:
+                  summary: Password successfully reset
+                  value:
+                    message: Password successfully reset! You can close this page.
+        '400':
+          description: Missing or invalid password, password changed recently, or reusing old password
+          content:
+            application/json:
+              examples:
+                InvalidPassword:
+                  summary: Invalid password format
+                  value:
+                    error: "Invalid password"
+                PasswordRecentlyChanged:
+                  summary: Password changed recently
+                  value:
+                    error: Password changed recently. Please wait at least one hour since you last changed your password.
+                PasswordReuse:
+                  summary: Reusing old password
+                  value:
+                    error: Cannot set password to be the same as the old one
         '403':
           $ref: '#/components/responses/WeakPasswordResponse'
   /password-strength:
@@ -740,12 +996,21 @@ paths:
                     error: Internal server error
 components:
   schemas:
+    UnconfirmedUser:
+      type: object
+      properties:
+        user_name:
+          type: string
+        email:
+          type: string
     User:
       type: object
       properties:
         id:
           type: integer
         user_name:
+          type: string
+        email:
           type: string
     Transaction:
       type: object
@@ -969,6 +1234,23 @@ components:
                 usd_to_lbp: true
                 location: "Beirut"
                 phone_number: "+96171234567"
+    PasswordResetRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+            properties:
+              email:
+                type: string
+                description: The email address to send the reset link to.
+          examples:
+            Example:
+              summary: Request password reset email
+              value:
+                email: "aae112@mail.aub.edu"
   responses:
     TransactionCreated:
       description: Transaction successfully added
@@ -1009,16 +1291,29 @@ components:
                   user_id: 1
                   added_date: '2025-04-09T18:25:00Z'
     UserCreated:
-      description: User successfully registered
+      description: User registered, but marked as unconfirmed until his email is verified.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/User'
+            $ref: '#/components/schemas/UnconfirmedUser'
           examples:
-            Success:
+            VerifyNeeded:
               value:
                 id: 10
                 user_name: ahmadb
+                email: aae112@mail.aub.edu
+    UserVerifyRequested:
+      description: Verification email resent (unconfirmed user schema is dumped)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UnconfirmedUser'
+          examples:
+            VerifyNeeded:
+              value:
+                id: 10
+                user_name: ahmadb
+                email: aae112@mail.aub.edu
     AuthTokenResponse:
       description: JWT token issued for authenticated session
       content:

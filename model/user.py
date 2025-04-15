@@ -57,6 +57,6 @@ class UserSchema(ma.Schema):
 
 class UnconfirmedUserSchema(ma.Schema):
     class Meta:
-        fields = ("id", "user_name", "email")
+        fields = ("user_name", "email")
         model = UnconfirmedUser
 
