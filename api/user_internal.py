@@ -45,7 +45,7 @@ def password_reset_form(token):
         user = db.session.query(UnconfirmedUser).filter_by(email=email).scalar()
         if not user:
             return render_template("reset_error.html", error_message="Email not valid"), 403
-    return render_template("reset.html", reset_url=url_for("user.password_reset", token=token, _external=True)), 200
+    return render_template("reset.html", reset_url=url_for("user_internal.password_reset", token=token, _external=True)), 200
 
 
 @user_internal_bp.route("/reset/<token>", methods=['POST'])

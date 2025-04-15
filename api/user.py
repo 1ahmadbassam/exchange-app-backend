@@ -71,7 +71,7 @@ def create_user():
 
     # generate and send verification token
     token = generate_verification_token(email)
-    confirm_url = url_for("user.verify_user", token=token, _external=True)
+    confirm_url = url_for("user_internal.verify_user", token=token, _external=True)
     html = render_template("verify_mail.html", confirm_url=confirm_url)
     subject = "LBP Exchange Tracker - Confirm your email"
     send_email(u_user.email, subject, html)
@@ -119,7 +119,7 @@ def resend_verify_user():
 
     # generate and send verification token
     token = generate_verification_token(email)
-    confirm_url = url_for("user.verify_user", token=token, _external=True)
+    confirm_url = url_for("user_internal.verify_user", token=token, _external=True)
     html = render_template("verify_mail.html", confirm_url=confirm_url)
     subject = "LBP Exchange Tracker - Confirm your email"
     send_email(email, subject, html)
@@ -152,7 +152,7 @@ def password_reset_request():
 
     # generate and send verification token
     token = generate_verification_token(email)
-    confirm_url = url_for("user.password_reset_form", token=token, _external=True)
+    confirm_url = url_for("user_internal.password_reset_form", token=token, _external=True)
     html = render_template("reset_mail.html", confirm_url=confirm_url)
     subject = "LBP Exchange Tracker - Reset your password"
     send_email(email, subject, html)
