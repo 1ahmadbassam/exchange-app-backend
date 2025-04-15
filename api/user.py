@@ -1,46 +1,17 @@
 import jwt
 from email_validator import validate_email, EmailNotValidError
 from flask import Blueprint, jsonify, request, url_for, render_template
-from password_strength import PasswordPolicy, PasswordStats
-from password_strength.tests import Uppercase, Length, Numbers, Special, Strength, EntropyBits
+from password_strength import PasswordStats
 
 from init import limiter, db, bcrypt
 from model.user import User, UserSchema, UnconfirmedUser, UnconfirmedUserSchema
 from util.mail import send_email
-from util.token import create_jwt, confirm_verification_token, generate_verification_token, extract_auth_jwt, decode_jwt
-from util.user import USER_FORBIDDEN_CHARACTERS, PASSWORD_FORBIDDEN_CHARACTERS
+from util.token import create_jwt, generate_verification_token, extract_auth_jwt, decode_jwt
+from util.user import USER_FORBIDDEN_CHARACTERS, PASSWORD_FORBIDDEN_CHARACTERS, test_password
 
 user_bp = Blueprint('user', __name__)
 user_schema = UserSchema()
 u_user_schema = UnconfirmedUserSchema()
-
-policy = PasswordPolicy.from_names(
-    length=12,
-    uppercase=2,
-    numbers=2,
-    special=1,
-    strength=0.4,
-    entropybits=70  # 70 bits of entropy is a fair compromise between alphabetical, numeric, and ASCII characters
-)
-
-
-def test_password(password):
-    tests = policy.test(password)
-    hh = []
-    for test in tests:
-        if type(test) == Length:
-            hh.append("Password must be at least " + str(test.length) + " characters long.")
-        elif type(test) == Uppercase:
-            hh.append(str(test.count) + " uppercase characters required.")
-        elif type(test) == Numbers:
-            hh.append(str(test.count) + " numbers required.")
-        elif type(test) == Special:
-            hh.append(str(test.count) + " symbols required (any of ~!@#$%^&*()_+).")
-        elif type(test) == Strength:
-            hh.append("Password too weak.")
-        elif type(test) == EntropyBits:
-            hh.append("Password does not have enough variability.")
-    return hh
 
 
 @user_bp.route('/user', methods=['GET'])
@@ -147,25 +118,6 @@ def resend_verify_user():
     return jsonify(u_user_schema.dump(u_user)), 200
 
 
-@user_bp.route("/verify/<token>", methods=['GET'])
-@limiter.limit("10 per minute")
-def verify_user(token):
-    valid, email = confirm_verification_token(token)
-    if not valid:
-        return render_template("verify_error.html", error_message=email), 403
-    u_user = db.session.query(UnconfirmedUser).filter_by(email=email).scalar()
-    if not u_user:
-        if db.session.query(User).filter_by(user_name=email).scalar():
-            return render_template("verify_error.html", error_message="Email already verified"), 400
-        else:
-            return render_template("verify_error.html", error_message="Email not valid"), 403
-    user = User(user_name=u_user.user_name, password=u_user.hashed_password, email=email, hsh=False)
-    db.session.add(user)
-    db.session.delete(u_user)
-    db.session.commit()
-    return render_template("verify.html"), 200
-
-
 @user_bp.route("/reset", methods=['POST'])
 @limiter.limit("10 per minute")
 def password_reset_request():
@@ -198,58 +150,6 @@ def password_reset_request():
     return '', 200
 
 
-@user_bp.route("/reset/<token>", methods=['GET'])
-@limiter.limit("10 per minute")
-def password_reset_form(token):
-    valid, email = confirm_verification_token(token, expiration=3600)
-    if not valid:
-        return render_template("reset_error.html", error_message=email), 403
-    user = db.session.query(User).filter_by(email=email).scalar()
-    if not user:
-        user = db.session.query(UnconfirmedUser).filter_by(email=email).scalar()
-        if not user:
-            return render_template("reset_error.html", error_message="Email not valid"), 403
-    return render_template("reset.html", reset_url=url_for("user.password_reset", token=token, _external=True)), 200
-
-
-@user_bp.route("/reset/<token>", methods=['POST'])
-@limiter.limit("10 per minute")
-def password_reset(token):
-    valid, email = confirm_verification_token(token, expiration=3600)
-    if not valid:
-        return jsonify({"error": email}), 400
-    user = db.session.query(User).filter_by(email=email).scalar()
-    if not user:
-        user = db.session.query(UnconfirmedUser).filter_by(email=email).scalar()
-        if not user:
-            return jsonify({"error": "Email not valid"}), 403
-
-    if not user.can_change_password():
-        return jsonify({"error": "Password changed recently. Please wait at least one hour since you last changed your password."}), 400
-
-    password = request.json.get('password', '').strip()
-    if not password:
-        return jsonify({"error": "New password is required"}), 400
-
-    if bcrypt.check_password_hash(user.hashed_password, password):
-        return jsonify({"error": "Cannot set password to be the same as the old one"}), 400
-
-    for char in PASSWORD_FORBIDDEN_CHARACTERS:
-        if char in password:
-            return jsonify({"error": "Forbidden character in password '" + char}), 400
-
-    # check if password meets complexity requirements
-    test = test_password(password)
-    if test:
-        return jsonify({"error": "Invalid password",
-                        "tests": test}), 403
-
-    user.update_password(password)
-    db.session.commit()
-
-    return jsonify({"message": "Password successfully reset! You can close this page."}), 200
-
-
 @user_bp.route('/authentication', methods=['POST'])
 @limiter.limit("10 per minute")
 def authenticate_user():
@@ -264,6 +164,29 @@ def authenticate_user():
     if not user or not bcrypt.check_password_hash(user.hashed_password, password):
         return jsonify({"error": "Invalid credentials"}), 403
 
+    if user.mfa_enabled:
+        return jsonify({"error": "TOTP Required"}), 401
+    token = create_jwt(user.id)
+    return jsonify({"token": token}), 200
+
+
+@user_bp.route('/authentication-mfa', methods=['POST'])
+@limiter.limit("10 per minute")
+def authenticate_user_mfa():
+    user_name = request.json.get('user_name', '').strip()
+    password = request.json.get('password', '').strip()
+    otp = request.json.get('otp', '').strip()
+
+    if not user_name or not password or not otp:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    user = db.session.execute(db.select(User).filter_by(user_name=user_name)).scalar()
+
+    if not user or not bcrypt.check_password_hash(user.hashed_password, password):
+        return jsonify({"error": "Invalid credentials"}), 403
+
+    if not user.is_otp_valid(otp):
+        return jsonify({"error": "Invalid OTP"}), 403
     token = create_jwt(user.id)
     return jsonify({"token": token}), 200
 

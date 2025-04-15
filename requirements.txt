@@ -36,4 +36,5 @@ wrapt==1.17.2
 python-dateutil==2.9.0.post0
 password-strength==0.0.3.post2
 dnspython==2.7.0
-email-validator==2.2.0
+email_validator==2.2.0
+pyotp==2.9.0

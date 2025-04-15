@@ -16,6 +16,7 @@ from db_config import DB_CONFIG
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_CONFIG
+app.config['APP_NAME'] = "LBP Exchange Tracker"
 SECRET_KEY = os.getenv("SECRET_KEY")
 SECURITY_PASSWORD_SALT = os.getenv("SECURITY_PASSWORD_SALT")
 CORS(app)
