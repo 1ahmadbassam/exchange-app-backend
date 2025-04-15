@@ -60,4 +60,5 @@ def remove_mfa():
     if not otp or not user.is_otp_valid(otp):
         return jsonify({"error": "Invalid OTP"}), 403
     user.disable_mfa()
+    db.session.commit()
     return '', 200

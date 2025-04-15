@@ -90,7 +90,7 @@ def delete_user():
         return jsonify({"error": "TOTP Required"}), 401
     elif user.mfa and not user.is_otp_valid(otp):
         return jsonify({"error": "Invalid OTP"}), 403
-    user.delete()
+    db.session.delete(user)
     db.session.commit()
     return '', 200
 
