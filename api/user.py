@@ -1,4 +1,3 @@
-import jwt
 from email_validator import validate_email, EmailNotValidError
 from flask import Blueprint, jsonify, request, url_for, render_template
 from password_strength import PasswordStats
@@ -6,7 +5,7 @@ from password_strength import PasswordStats
 from init import limiter, db, bcrypt
 from model.user import User, UserSchema, UnconfirmedUser, UnconfirmedUserSchema
 from util.mail import send_email
-from util.token import create_jwt, generate_verification_token, extract_auth_jwt, decode_jwt, get_b64encoded_qr_image
+from util.token import create_jwt, generate_verification_token
 from util.user import USER_FORBIDDEN_CHARACTERS, PASSWORD_FORBIDDEN_CHARACTERS, test_password, validate_token
 
 user_bp = Blueprint('user', __name__)
