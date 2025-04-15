@@ -4,7 +4,7 @@ import statistics
 from dateutil.relativedelta import relativedelta
 from flask import Blueprint, jsonify, request
 
-from init import limiter, db
+from init import limiter, db, tz
 from model.rate import DailyRate, MonthlyRate
 from model.transaction import Transaction
 from util.exchange import VOLATILITY_MSG, TREND_MSG
@@ -12,7 +12,7 @@ from util.exchange import VOLATILITY_MSG, TREND_MSG
 exchange_bp = Blueprint('exchange', __name__)
 
 
-def _get_exchange_rate(end_date=datetime.datetime.now(datetime.timezone.utc)):
+def _get_exchange_rate(end_date=datetime.datetime.now(tz)):
     start_date = end_date - datetime.timedelta(hours=72)
     try:
         usd_to_lbp = statistics.mean(map(lambda transact: transact.lbp_amount / transact.usd_amount, db.session.execute(
@@ -32,12 +32,12 @@ def _get_exchange_rate(end_date=datetime.datetime.now(datetime.timezone.utc)):
 
 def _get_monthly_exchange_rate(month: datetime.datetime = None):
     if not month:
-        month = datetime.datetime.now(datetime.timezone.utc)
+        month = datetime.datetime.now(tz)
     usd_to_lbp_rates = []
     lbp_to_usd_rates = []
     cur = month
     # works for current date and past ones, because they are in the past
-    while cur < month + relativedelta(months=1) and cur <= datetime.datetime.now(datetime.timezone.utc):
+    while cur < month + relativedelta(months=1) and cur <= datetime.datetime.now(tz):
         usd_to_lbp, lbp_to_usd = get_daily_exchange_rate(cur)
         usd_to_lbp_rates.append(usd_to_lbp)
         lbp_to_usd_rates.append(lbp_to_usd)
@@ -56,7 +56,7 @@ def _get_monthly_exchange_rate(month: datetime.datetime = None):
 
 def get_daily_exchange_rate(day: datetime.datetime = None):
     # do not cache for today, today isn't done yet
-    if not day or day.date() == datetime.datetime.now(datetime.timezone.utc).date():
+    if not day or day.date() == datetime.datetime.now(tz).date():
         return _get_exchange_rate()
     day = day.replace(hour=0, minute=0, second=0, microsecond=0)
     item = db.session.query(DailyRate).filter_by(date=day.date()).scalar()
@@ -73,12 +73,12 @@ def get_daily_exchange_rate(day: datetime.datetime = None):
 
 def get_monthly_exchange_rate(month: datetime.datetime = None):
     if not month or (
-            month.month == datetime.datetime.now(datetime.timezone.utc).month
-            and month.year == datetime.datetime.now(datetime.timezone.utc).year
+            month.month == datetime.datetime.now(tz).month
+            and month.year == datetime.datetime.now(tz).year
     ):
         return _get_monthly_exchange_rate()
     # any day in the month works
-    month = datetime.datetime(month.year, month.month, 1, tzinfo=datetime.timezone.utc)
+    month = datetime.datetime(month.year, month.month, 1, tzinfo=tz)
     item = db.session.query(MonthlyRate).filter_by(date=month.date()).scalar()
     if not item:
         usd_to_lbp, lbp_to_usd = _get_monthly_exchange_rate(month)
@@ -102,7 +102,7 @@ def exchange_rate():
 def exchange_rate_hourly():
     rates = []
     for i in range(24):
-        hour = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=i)
+        hour = datetime.datetime.now(tz) - datetime.timedelta(hours=i)
         usd_to_lbp, lbp_to_usd = _get_exchange_rate(hour)
         rates.append(
             {"datetime": hour.isoformat().replace("+00:00", "Z"), "usd_to_lbp": usd_to_lbp, "lbp_to_usd": lbp_to_usd})
@@ -125,7 +125,7 @@ def exchange_rate_daily():
         return jsonify({'error': 'start_date and end_date are invalid'}), 400
     rates = []
 
-    today = datetime.datetime.now(datetime.timezone.utc)
+    today = datetime.datetime.now(tz)
     at = False
     if today.date() == end_date.date():
         end_date -= datetime.timedelta(days=1)
@@ -172,7 +172,7 @@ def exchange_rate_trend():
     period = request.args.get("period", "").strip()
     if not period:
         return jsonify({'error': 'period is required'}), 400
-    today = datetime.datetime.now(datetime.timezone.utc)
+    today = datetime.datetime.now(tz)
     if period == "24h":
         former_date = today - datetime.timedelta(hours=24)
     elif period == "7d":
@@ -229,7 +229,7 @@ def exchange_rate_volatility():
     period = request.args.get("period", "").strip()
     if not period:
         return jsonify({'error': 'period is required'}), 400
-    end_date = datetime.datetime.now(datetime.timezone.utc)
+    end_date = datetime.datetime.now(tz)
     exact = True
     if period == "24h":
         start_date = end_date - datetime.timedelta(hours=24)

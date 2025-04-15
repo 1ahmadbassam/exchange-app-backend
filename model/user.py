@@ -3,7 +3,7 @@ import datetime
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from init import db, ma, bcrypt
+from init import db, ma, bcrypt, tz
 
 
 class User(db.Model):
@@ -16,15 +16,15 @@ class User(db.Model):
     password_updated: Mapped[datetime.datetime] = mapped_column(nullable=False)
 
     def __init__(self, user_name, password, email, hsh=True):
-        super(User, self).__init__(user_name=user_name, email=email, password_updated=datetime.datetime.now(datetime.timezone.utc))
+        super(User, self).__init__(user_name=user_name, email=email, password_updated=datetime.datetime.now(tz))
         self.hashed_password = bcrypt.generate_password_hash(password) if hsh else password
 
     def update_password(self, password, hsh=True):
         self.hashed_password = bcrypt.generate_password_hash(password) if hsh else password
-        self.password_updated=datetime.datetime.now(datetime.timezone.utc)
+        self.password_updated=datetime.datetime.now(tz)
 
     def can_change_password(self):
-        return datetime.datetime.now(datetime.timezone.utc) - self.password_updated >= datetime.timedelta(hours=1)
+        return datetime.datetime.now(tz) - self.password_updated.replace(tzinfo=tz) >= datetime.timedelta(hours=1)
 
 
 
@@ -38,15 +38,15 @@ class UnconfirmedUser(db.Model):
     password_updated: Mapped[datetime.datetime] = mapped_column(nullable=False)
 
     def __init__(self, user_name, password, email, hsh=True):
-        super(UnconfirmedUser, self).__init__(user_name=user_name, email=email, password_updated=datetime.datetime.now(datetime.timezone.utc))
+        super(UnconfirmedUser, self).__init__(user_name=user_name, email=email, password_updated=datetime.datetime.now(tz))
         self.hashed_password = bcrypt.generate_password_hash(password) if hsh else password
 
     def update_password(self, password, hsh=True):
         self.hashed_password = bcrypt.generate_password_hash(password) if hsh else password
-        self.password_updated=datetime.datetime.now(datetime.timezone.utc)
+        self.password_updated=datetime.datetime.now(tz)
 
     def can_change_password(self):
-        return datetime.datetime.now(datetime.timezone.utc) - self.password_updated >= datetime.timedelta(hours=1)
+        return datetime.datetime.now(tz) - self.password_updated.replace(tzinfo=tz) >= datetime.timedelta(hours=1)
 
 
 class UserSchema(ma.Schema):

@@ -1,3 +1,4 @@
+import datetime
 import os
 
 from dotenv import load_dotenv
@@ -23,6 +24,7 @@ limiter = Limiter(key_func=get_remote_address)
 limiter.init_app(app)
 ma = Marshmallow(app)
 bcrypt = Bcrypt(app)
+tz=datetime.timezone.utc
 
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
 app.config['MAIL_PORT'] = os.getenv('MAIL_PORT')

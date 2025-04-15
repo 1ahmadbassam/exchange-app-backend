@@ -3,12 +3,12 @@ import datetime
 import jwt
 from itsdangerous import SignatureExpired, BadSignature, URLSafeTimedSerializer
 
-from init import SECURITY_PASSWORD_SALT, SECRET_KEY
+from init import SECURITY_PASSWORD_SALT, SECRET_KEY, tz
 
 
 def create_jwt(user_id):
-    payload = {'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=4),
-               'iat': datetime.datetime.now(datetime.timezone.utc), 'sub': str(user_id)}
+    payload = {'exp': datetime.datetime.now(tz) + datetime.timedelta(days=4),
+               'iat': datetime.datetime.now(tz), 'sub': str(user_id)}
     return jwt.encode(payload, SECRET_KEY, algorithm='HS256')
 
 

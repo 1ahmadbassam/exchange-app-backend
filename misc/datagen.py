@@ -4,7 +4,7 @@ import random
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import func
 
-from init import app, db, bcrypt
+from init import app, db, bcrypt, tz
 from model.transaction import Transaction
 from model.user import User
 
@@ -28,7 +28,7 @@ def generate_transaction(added_date):
 
 
 def populate_transactions(database, period="2yr"):
-    today = datetime.datetime.now(datetime.timezone.utc)
+    today = datetime.datetime.now(tz)
     if period == "24h":
         past = today - datetime.timedelta(hours=24)
     elif period == "7d":

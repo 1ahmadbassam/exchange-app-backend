@@ -4,7 +4,7 @@ import jwt
 from dateutil.relativedelta import relativedelta
 from flask import Blueprint, request, jsonify
 
-from init import db, limiter
+from init import db, limiter, tz
 from model.transaction import Transaction, TransactionSchema
 from model.volume import DailyVolume, MonthlyVolume
 from util.token import extract_auth_jwt, decode_jwt
@@ -38,13 +38,13 @@ def _get_transaction_volume(start_date, end_date):
             (lbp_to_usd_total_amount, lbp_to_usd_transaction_count))
 
 
-def _get_daily_transaction_volume(end_date=datetime.datetime.now(datetime.timezone.utc)):
+def _get_daily_transaction_volume(end_date=datetime.datetime.now(tz)):
     start_date = end_date.replace(hour=0, minute=0, second=0, microsecond=0)
     return _get_transaction_volume(start_date, end_date)
 
 
 def get_daily_transaction_volume(day: datetime.datetime = None):
-    if not day or day.date() == datetime.datetime.now(datetime.timezone.utc).date():
+    if not day or day.date() == datetime.datetime.now(tz).date():
         return _get_daily_transaction_volume()
     day = day.replace(hour=0, minute=0, second=0, microsecond=0)
     item = db.session.query(DailyVolume).filter_by(date=day.date()).scalar()
@@ -66,15 +66,15 @@ def get_daily_transaction_volume(day: datetime.datetime = None):
             (item.lbp_to_usd_total_amount, item.lbp_to_usd_transaction_count))
 
 
-def _get_monthly_transaction_volume(end_date=datetime.datetime.now(datetime.timezone.utc)):
+def _get_monthly_transaction_volume(end_date=datetime.datetime.now(tz)):
     start_date = end_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     return _get_transaction_volume(start_date, end_date)
 
 
 def get_monthly_transaction_volume(month: datetime.datetime = None):
     if not month or (
-            month.month == datetime.datetime.now(datetime.timezone.utc).month
-            and month.year == datetime.datetime.now(datetime.timezone.utc).year
+            month.month == datetime.datetime.now(tz).month
+            and month.year == datetime.datetime.now(tz).year
     ):
         return _get_monthly_transaction_volume()
     month = month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)

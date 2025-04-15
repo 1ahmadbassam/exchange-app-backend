@@ -2,9 +2,80 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LBP Exchange Tracker - Password Reset</title>
 </head>
 <body>
+<h2>Reset Your Password</h2>
 
+<form id="password-reset-form">
+    <label for="new-password">New Password</label>
+    <input type="password" id="new-password" name="new_password" required>
+
+    <button type="submit">Reset Password</button>
+</form>
+
+<div id="error-message" style="color: red; display: none;">
+    <h3>Password Reset Error</h3>
+    <p id="error-text"></p>
+    <ul id="error-tests"></ul>
+</div>
+
+<script>
+    "use strict";
+    const passwordInput = document.getElementById("new-password");
+    const errorMessageElement = document.getElementById("error-message");
+    const errorTextElement = document.getElementById("error-text");
+    const errorTestsElement = document.getElementById("error-tests");
+
+    passwordInput.addEventListener("input", function () {
+        errorMessageElement.style.display = "none";
+    });
+
+    const sanitizeInput = (input) => {
+        const temp = document.createElement('div');
+        temp.textContent = input;
+        return temp.innerHTML;
+    };
+
+    document.getElementById("password-reset-form").addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const newPassword = sanitizeInput(passwordInput.value.trim());
+        if (newPassword === "") return;
+
+        fetch(`{{ reset_url }}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                password: newPassword
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                } else {
+                    errorTextElement.textContent = data.error;
+                    errorTestsElement.innerHTML = "";
+
+                    if (data["tests"] && data["tests"].length > 0) {
+                        data["tests"].forEach(test => {
+                            const listItem = document.createElement("li");
+                            listItem.textContent = test;
+                            errorTestsElement.appendChild(listItem);
+                        });
+                    }
+                    errorMessageElement.style.display = "block";
+                }
+            })
+            .catch(error => {
+                console.error("Error resetting password:", error);
+                alert("An error occurred. Please try again.");
+            });
+    });
+</script>
 </body>
 </html>
