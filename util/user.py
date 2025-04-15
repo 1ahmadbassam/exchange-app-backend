@@ -1,5 +1,10 @@
+import jwt
 from password_strength import PasswordPolicy
 from password_strength.tests import Uppercase, Length, Numbers, Special, Strength, EntropyBits
+
+from init import db
+from model.user import User
+from util.token import extract_auth_jwt, decode_jwt
 
 USER_FORBIDDEN_CHARACTERS = [
     '_', '@', '&', '!', '?', '%', '#', '$', '^', '*', '(', ')', '+', '=', '{', '}', '[', ']', ':', ';',
@@ -39,3 +44,17 @@ def test_password(password):
         elif type(test) == EntropyBits:
             hh.append("Password does not have enough variability.")
     return hh
+
+
+def validate_token(request):
+    token = extract_auth_jwt(request)
+    if not token:
+        return False, None
+    try:
+        user_id = decode_jwt(token)
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        return False, None
+    user = db.session.query(User).filter_by(id=user_id).first()
+    if not user:
+        return False, None
+    return True, user

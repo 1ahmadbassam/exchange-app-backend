@@ -16,10 +16,16 @@ class User(db.Model):
     mfa: Mapped[bool] = mapped_column(nullable=False, default=False)
     mfa_code: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(128), nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(nullable=True)
+    verified_at: Mapped[datetime.datetime] = mapped_column(nullable=True)
     password_updated: Mapped[datetime.datetime] = mapped_column(nullable=False)
 
-    def __init__(self, user_name, password, email, hsh=True):
-        super(User, self).__init__(user_name=user_name, email=email, password_updated=datetime.datetime.now(tz))
+    def __init__(self, user_name, password, email, hsh=True, created_at=datetime.datetime.now(tz), verified_at=None):
+        super(User, self).__init__(user_name=user_name,
+                                   email=email,
+                                   created_at=created_at,
+                                   verified_at=verified_at,
+                                   password_updated=datetime.datetime.now(tz))
         self.hashed_password = bcrypt.generate_password_hash(password) if hsh else password
         self.mfa_code = pyotp.random_base32()
 
@@ -38,6 +44,10 @@ class User(db.Model):
         totp = pyotp.parse_uri(self.get_authentication_setup_uri())
         return totp.verify(user_otp)
 
+    def disable_mfa(self):
+        self.mfa = False
+        self.mfa_code = pyotp.random_base32()
+
 
 class UnconfirmedUser(db.Model):
     __tablename__ = 'unconfirmed_user'
@@ -46,10 +56,14 @@ class UnconfirmedUser(db.Model):
     user_name: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
     email: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(128), nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(nullable=True)
     password_updated: Mapped[datetime.datetime] = mapped_column(nullable=False)
 
     def __init__(self, user_name, password, email, hsh=True):
-        super(UnconfirmedUser, self).__init__(user_name=user_name, email=email, password_updated=datetime.datetime.now(tz))
+        super(UnconfirmedUser, self).__init__(user_name=user_name,
+                                              email=email,
+                                              created_at=datetime.datetime.now(tz),
+                                              password_updated=datetime.datetime.now(tz))
         self.hashed_password = bcrypt.generate_password_hash(password) if hsh else password
 
     def update_password(self, password, hsh=True):
@@ -62,12 +76,12 @@ class UnconfirmedUser(db.Model):
 
 class UserSchema(ma.Schema):
     class Meta:
-        fields = ("id", "user_name", "email")
+        fields = ("id", "user_name", "email", "created_at", "verified_at")
         model = User
 
 
 class UnconfirmedUserSchema(ma.Schema):
     class Meta:
-        fields = ("user_name", "email")
+        fields = ("user_name", "email", "created_at")
         model = UnconfirmedUser
 

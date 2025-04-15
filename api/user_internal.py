@@ -1,13 +1,16 @@
-from flask import render_template, jsonify, request, url_for
+import datetime
 
-from api.user import user_bp, test_password
-from init import limiter, db, bcrypt
-from model.user import User, UnconfirmedUser
+from flask import render_template, jsonify, request, url_for, Blueprint
+
+from init import limiter, db, bcrypt, tz
+from model.user import User, UnconfirmedUser, UserSchema
 from util.token import confirm_verification_token
-from util.user import PASSWORD_FORBIDDEN_CHARACTERS
+from util.user import PASSWORD_FORBIDDEN_CHARACTERS, test_password
 
+user_internal_bp = Blueprint('user_internal', __name__)
+user_schema = UserSchema()
 
-@user_bp.route("/verify/<token>", methods=['GET'])
+@user_internal_bp.route("/verify/<token>", methods=['GET'])
 @limiter.limit("10 per minute")
 def verify_user(token):
     valid, email = confirm_verification_token(token)
@@ -19,14 +22,19 @@ def verify_user(token):
             return render_template("verify_error.html", error_message="Email already verified"), 400
         else:
             return render_template("verify_error.html", error_message="Email not valid"), 403
-    user = User(user_name=u_user.user_name, password=u_user.hashed_password, email=email, hsh=False)
+    user = User(user_name=u_user.user_name,
+                password=u_user.hashed_password,
+                email=email,
+                created_at=u_user.created_at,
+                verified_at=datetime.datetime.now(tz),
+                hsh=False)
     db.session.add(user)
     db.session.delete(u_user)
     db.session.commit()
     return render_template("verify.html"), 200
 
 
-@user_bp.route("/reset/<token>", methods=['GET'])
+@user_internal_bp.route("/reset/<token>", methods=['GET'])
 @limiter.limit("10 per minute")
 def password_reset_form(token):
     valid, email = confirm_verification_token(token, expiration=3600)
@@ -40,7 +48,7 @@ def password_reset_form(token):
     return render_template("reset.html", reset_url=url_for("user.password_reset", token=token, _external=True)), 200
 
 
-@user_bp.route("/reset/<token>", methods=['POST'])
+@user_internal_bp.route("/reset/<token>", methods=['POST'])
 @limiter.limit("10 per minute")
 def password_reset(token):
     valid, email = confirm_verification_token(token, expiration=3600)

@@ -6,8 +6,8 @@ from password_strength import PasswordStats
 from init import limiter, db, bcrypt
 from model.user import User, UserSchema, UnconfirmedUser, UnconfirmedUserSchema
 from util.mail import send_email
-from util.token import create_jwt, generate_verification_token, extract_auth_jwt, decode_jwt
-from util.user import USER_FORBIDDEN_CHARACTERS, PASSWORD_FORBIDDEN_CHARACTERS, test_password
+from util.token import create_jwt, generate_verification_token, extract_auth_jwt, decode_jwt, get_b64encoded_qr_image
+from util.user import USER_FORBIDDEN_CHARACTERS, PASSWORD_FORBIDDEN_CHARACTERS, test_password, validate_token
 
 user_bp = Blueprint('user', __name__)
 user_schema = UserSchema()
@@ -17,15 +17,8 @@ u_user_schema = UnconfirmedUserSchema()
 @user_bp.route('/user', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_user():
-    token = extract_auth_jwt(request)
-    if not token:
-        return jsonify({"error": "Invalid or expired token"}), 403
-    try:
-        user_id = decode_jwt(token)
-    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-        return jsonify({"error": "Invalid or expired token"}), 403
-    user = db.session.query(User).filter_by(id=user_id).first()
-    if not user:
+    val, user = validate_token(request)
+    if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
     return jsonify(user_schema.dump(user)), 200
 
@@ -84,6 +77,22 @@ def create_user():
     send_email(u_user.email, subject, html)
 
     return jsonify(u_user_schema.dump(u_user)), 200
+
+
+@user_bp.route('/user/delete', methods=['POST'])
+@limiter.limit("10 per minute")
+def delete_user():
+    val, user = validate_token(request)
+    if not val:
+        return jsonify({"error": "Invalid or expired token"}), 403
+    otp = str(request.json.get('otp', '')).strip()
+    if not otp and user.mfa:
+        return jsonify({"error": "TOTP Required"}), 401
+    elif user.mfa and not user.is_otp_valid(otp):
+        return jsonify({"error": "Invalid OTP"}), 403
+    user.delete()
+    db.session.commit()
+    return '', 200
 
 
 @user_bp.route("/verify", methods=['POST'])
@@ -155,6 +164,7 @@ def password_reset_request():
 def authenticate_user():
     user_name = request.json.get('user_name', '').strip()
     password = request.json.get('password', '').strip()
+    otp = str(request.json.get('otp', '')).strip()
 
     if not user_name or not password:
         return jsonify({"error": "Missing required fields"}), 400
@@ -164,29 +174,11 @@ def authenticate_user():
     if not user or not bcrypt.check_password_hash(user.hashed_password, password):
         return jsonify({"error": "Invalid credentials"}), 403
 
-    if user.mfa_enabled:
+    if not otp and user.mfa:
         return jsonify({"error": "TOTP Required"}), 401
-    token = create_jwt(user.id)
-    return jsonify({"token": token}), 200
-
-
-@user_bp.route('/authentication-mfa', methods=['POST'])
-@limiter.limit("10 per minute")
-def authenticate_user_mfa():
-    user_name = request.json.get('user_name', '').strip()
-    password = request.json.get('password', '').strip()
-    otp = request.json.get('otp', '').strip()
-
-    if not user_name or not password or not otp:
-        return jsonify({"error": "Missing required fields"}), 400
-
-    user = db.session.execute(db.select(User).filter_by(user_name=user_name)).scalar()
-
-    if not user or not bcrypt.check_password_hash(user.hashed_password, password):
-        return jsonify({"error": "Invalid credentials"}), 403
-
-    if not user.is_otp_valid(otp):
+    elif user.mfa and not user.is_otp_valid(otp):
         return jsonify({"error": "Invalid OTP"}), 403
+
     token = create_jwt(user.id)
     return jsonify({"token": token}), 200
 
