@@ -9,6 +9,9 @@ from util.mail import send_email
 from util.token import create_jwt, confirm_verification_token, generate_verification_token
 from util.user import USER_FORBIDDEN_CHARACTERS, PASSWORD_FORBIDDEN_CHARACTERS
 
+user_bp = Blueprint('user', __name__)
+user_schema = UserSchema()
+
 policy = PasswordPolicy.from_names(
     length=12,
     uppercase=2,
@@ -36,10 +39,6 @@ def test_password(password):
         elif type(test) == EntropyBits:
             hh.append("Password does not have enough variability.")
     return hh
-
-
-user_bp = Blueprint('user', __name__)
-user_schema = UserSchema()
 
 
 @user_bp.route('/user', methods=['POST'])
