@@ -67,6 +67,12 @@ class WalletSchema(ma.Schema):
         model = Wallet
 
 
+class WalletInflightSchema(ma.Schema):
+    class Meta:
+        fields = ("user_id", "usd_inflight", "lbp_inflight")
+        model = Wallet
+
+
 class WalletTransactionSchema(ma.Schema):
     class Meta:
         fields = ("id", "usd_amount", "lbp_amount", "added_date", "user_id", "description")

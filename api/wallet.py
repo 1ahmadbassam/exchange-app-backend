@@ -2,11 +2,12 @@ from flask import Blueprint, jsonify, request
 
 from init import limiter, db
 from model.offer import Offer
-from model.wallet import Wallet, WalletTransaction, WalletSchema, WalletTransactionSchema
+from model.wallet import Wallet, WalletTransaction, WalletSchema, WalletInflightSchema, WalletTransactionSchema
 from util.user import validate_token
 
 wallet_bp = Blueprint('wallet', __name__)
 wallet_schema = WalletSchema()
+wallet_inflight_schema = WalletInflightSchema()
 wallet_transaction_schema = WalletTransactionSchema()
 wallet_transactions_schema = WalletTransactionSchema(many=True)
 
@@ -19,6 +20,16 @@ def get_wallet():
         return jsonify({"error": "Invalid or expired token"}), 403
     wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
     return jsonify(wallet_schema.dump(wallet)), 200
+
+
+@wallet_bp.route('/wallet/inflight', methods=['GET'])
+@limiter.limit("10 per minute")
+def get_wallet_inflight():
+    val, user = validate_token(request)
+    if not val:
+        return jsonify({"error": "Invalid or expired token"}), 403
+    wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
+    return jsonify(wallet_inflight_schema.dump(wallet)), 200
 
 
 @wallet_bp.route('/wallet/transaction', methods=['GET'])
@@ -73,9 +84,9 @@ def add_wallet_transaction():
     description = request.json['description']
     wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
     if not wallet.has_enough_usd(usd_amount):
-        return jsonify({"error": "Not enough USD for transaction"}), 400
+        return jsonify({"error": "Not enough USD for transaction"}), 401
     if not wallet.has_enough_lbp(lbp_amount):
-        return jsonify({"error": "Not enough LBP for transaction"}), 400
+        return jsonify({"error": "Not enough LBP for transaction"}), 401
     wl = WalletTransaction(usd_amount=usd_amount, lbp_amount=lbp_amount, description=description, user_id=user.id)
     db.session.add(wl)
     db.session.commit()
@@ -94,7 +105,7 @@ def reset_wallet():
     elif user.mfa and not user.is_otp_valid(otp):
         return jsonify({"error": "Invalid OTP"}), 403
     if db.session.query(Offer).filter_by(user_id=user.id, available=True).all():
-        return jsonify({"error": "Cannot reset wallet with available offers"}), 400
+        return jsonify({"error": "Cannot reset wallet with available offers"}), 401
     db.session.query(WalletTransaction).filter_by(user_id=user.id).delete()
     # just in case, rounding errors
     wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
