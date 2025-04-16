@@ -1146,6 +1146,9 @@ paths:
       description: >
         Returns a list of all currently available (i.e., not taken) peer-to-peer exchange offers.
         No authentication is required. This allows users to browse offers submitted by others.
+        It is important to note that the API works in the opposite way as these offers are stored as seller-oriented. 
+        Hence, a buyer interprets a usd_to_lbp offer as one where he sells his LBP in exchange for USD, 
+        whereas the seller sells his USD in exchange for LBP.
       tags: [ Exchange Offers ]
       operationId: getAvailableOffers
       responses:
