@@ -57,8 +57,8 @@ def delete_offer():
     offer_id = request.json.get('offer_id', None)
     if offer_id is None:
         return jsonify({"error": "Missing required fields"}), 400
-    offer = Offer.query.get(offer_id)
-    if offer is None:
+    offer = db.session.query(Offer).filter_by(id=offer_id).first()
+    if not offer:
         return jsonify({"error": "Invalid offer input"}), 400
     if offer.user_id != int(user.id):
         return jsonify({"error": "Access is forbidden"}), 403
