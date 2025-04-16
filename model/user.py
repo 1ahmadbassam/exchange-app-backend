@@ -1,10 +1,11 @@
 import datetime
 
 import pyotp
-from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, event
+from sqlalchemy.orm import Mapped, mapped_column, sessionmaker
 
 from init import app, db, ma, bcrypt, tz
+from model.wallet import Wallet
 
 
 class User(db.Model):
@@ -84,3 +85,10 @@ class UnconfirmedUserSchema(ma.Schema):
     class Meta:
         fields = ("user_name", "email", "created_at")
         model = UnconfirmedUser
+
+
+@event.listens_for(User, 'after_insert')
+def create_wallet(_, connection, target):
+    session = sessionmaker(bind=connection)()
+    session.add(Wallet(target.id))
+    session.commit()

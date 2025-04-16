@@ -6,7 +6,7 @@ from flask import Blueprint, request, jsonify
 
 from init import db, limiter
 from model.transaction import Transaction, TransactionSchema
-from model.volume import DailyVolume, MonthlyVolume
+from model.wallet import Wallet
 from util.token import extract_auth_jwt, decode_jwt
 from util.transaction import get_monthly_transaction_volume, get_daily_transaction_volume
 from util.user import validate_token
@@ -48,6 +48,11 @@ def add_transaction():
             user_id = decode_jwt(token)
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
             return jsonify({"error": "Invalid or expired token"}), 403
+        wallet = db.session.query(Wallet).filter_by(user_id=user_id).first()
+        if usd_to_lbp and not wallet.has_enough_usd(usd_amount):
+            return jsonify({"error": "Not enough USD in wallet. Add more USD before attempting this transaction."}), 401
+        elif not wallet.has_enough_lbp(lbp_amount):
+            return jsonify({"error": "Not enough LBP in wallet. Add more LBP before attempting this transaction."}), 401
     transaction = Transaction(usd_amount=usd_amount, lbp_amount=lbp_amount, usd_to_lbp=usd_to_lbp, user_id=user_id)
     db.session.add(transaction)
     db.session.commit()

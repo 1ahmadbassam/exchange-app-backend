@@ -3,7 +3,9 @@ from flask import Blueprint, request, jsonify
 from init import limiter, db
 from model.offer import Offer, OfferSchema
 from model.transaction import Transaction
+from model.wallet import Wallet
 from util.user import validate_token
+from util.wallet import add_two_way_wallet_transaction
 
 offer_bp = Blueprint('offer', __name__)
 offer_schema = OfferSchema()
@@ -39,10 +41,16 @@ def add_offer():
         usd_to_lbp = bool(usd_to_lbp)
     except (ValueError, TypeError):
         return jsonify({"error": "Invalid usd_to_lbp, must be a boolean value"}), 400
+    wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
+    if usd_to_lbp and not wallet.has_enough_usd(usd_amount):
+        return jsonify({"error": "Not enough USD in wallet. Add more USD before attempting this transaction."}), 401
+    elif not wallet.has_enough_lbp(lbp_amount):
+        return jsonify({"error": "Not enough LBP in wallet. Add more LBP before attempting this transaction."}), 401
     location = location.strip()
     phone_number = phone_number.strip()
     offer = Offer(usd_amount=usd_amount, lbp_amount=lbp_amount, usd_to_lbp=usd_to_lbp, user_id=user.id,
                   location=location, phone_number=phone_number)
+    wallet.add_inflight(usd_amount, lbp_amount, usd_to_lbp)
     db.session.add(offer)
     db.session.commit()
     return jsonify(offer_schema.dump(offer)), 200
@@ -62,6 +70,9 @@ def delete_offer():
         return jsonify({"error": "Invalid offer input"}), 400
     if offer.user_id != int(user.id):
         return jsonify({"error": "Access is forbidden"}), 403
+    if offer.available:
+        wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
+        wallet.remove_inflight(offer.usd_amount, offer.lbp_amount, offer.usd_to_lbp)
     db.session.delete(offer)
     db.session.commit()
     return '', 200
@@ -91,7 +102,6 @@ def update_offer():
             usd_amount = float(usd_amount)
             if usd_amount <= 1e-6:
                 return jsonify({"error": "Invalid USD amount, must be greater than zero"}), 400
-            offer.usd_amount = usd_amount
         except (ValueError, TypeError):
             return jsonify({"error": "Invalid USD amount, must be a valid number"}), 400
     if lbp_amount is not None:
@@ -99,21 +109,32 @@ def update_offer():
             lbp_amount = float(lbp_amount)
             if lbp_amount <= 1e-6:
                 return jsonify({"error": "Invalid LBP amount, must be greater than zero"}), 400
-            offer.lbp_amount = lbp_amount
         except (ValueError, TypeError):
             return jsonify({"error": "Invalid LBP amount, must be a valid number"}), 400
     if usd_to_lbp is not None:
         try:
             usd_to_lbp = bool(usd_to_lbp)
-            offer.usd_to_lbp = usd_to_lbp
         except (ValueError, TypeError):
             return jsonify({"error": "Invalid usd_to_lbp, must be a boolean value"}), 400
+    else:
+        usd_to_lbp = offer.usd_to_lbp
+    wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
+    if usd_amount and usd_to_lbp is True and not wallet.has_enough_usd(usd_amount, offer.usd_amount):
+        return jsonify({"error": "Not enough USD in wallet. Add more USD before attempting this transaction."}), 401
+    if lbp_amount and usd_to_lbp is False and not wallet.has_enough_lbp(lbp_amount, offer.lbp_amount):
+        return jsonify({"error": "Not enough LBP in wallet. Add more LBP before attempting this transaction."}), 401
     if location is not None:
         location = location.strip()
         offer.location = location
     if phone_number is not None:
         phone_number = phone_number.strip()
         offer.phone_number = phone_number
+    # update inflight
+    wallet.remove_inflight(offer.usd_amount, offer.lbp_amount, offer.usd_to_lbp)
+    offer.usd_amount = usd_amount
+    offer.lbp_amount = lbp_amount
+    offer.usd_to_lbp = usd_to_lbp
+    wallet.add_inflight(usd_amount, lbp_amount, usd_to_lbp)
     db.session.commit()
     return jsonify(offer_schema.dump(offer)), 200
 
@@ -149,9 +170,18 @@ def accept_offer():
         return jsonify({"error": "Invalid offer input"}), 400
     if offer.user_id == int(user.id):
         return jsonify({"error": "Invalid offer input - cannot accept own offer"}), 400
+    wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
+    if offer.usd_to_lbp and not wallet.has_enough_usd(offer.usd_amount):
+        return jsonify({"error": "Not enough USD in wallet. Add more USD before accepting this transaction."}), 401
+    elif not wallet.has_enough_lbp(offer.lbp_amount):
+        return jsonify({"error": "Not enough LBP in wallet. Add more LBP before accepting this transaction."}), 401
+    # restore loss to original user
+    original_wallet = db.session.query(Wallet).filter_by(user_id=offer.user_id).first()
+    original_wallet.remove_inflight(offer.usd_amount, offer.lbp_amount, offer.usd_to_lbp)
     offer.available = False
     transaction = Transaction(usd_amount=offer.usd_amount, lbp_amount=offer.lbp_amount, usd_to_lbp=offer.usd_to_lbp,
-                              user_id=user.id)
+                              user_id=user.id, offer=True)
     db.session.add(transaction)
     db.session.commit()
+    add_two_way_wallet_transaction(transaction, offer.user_id)
     return jsonify(offer_schema.dump(offer)), 200
