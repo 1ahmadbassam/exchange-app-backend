@@ -72,8 +72,6 @@ def add_wallet_transaction():
         lbp_amount = 0
     description = request.json['description']
     wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
-    print(usd_amount, lbp_amount, description)
-    print(wallet.has_enough_usd(usd_amount))
     if not wallet.has_enough_usd(usd_amount):
         return jsonify({"error": "Not enough USD for transaction"}), 400
     if not wallet.has_enough_lbp(lbp_amount):
