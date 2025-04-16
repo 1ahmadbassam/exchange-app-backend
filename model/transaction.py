@@ -21,7 +21,8 @@ class Transaction(db.Model):
 
     def __init__(self, usd_amount, lbp_amount, usd_to_lbp, user_id, added_date=datetime.datetime.now(tz)):
         super(Transaction, self).__init__(usd_amount=usd_amount,
-                                          lbp_amount=lbp_amount, usd_to_lbp=usd_to_lbp,
+                                          lbp_amount=lbp_amount,
+                                          usd_to_lbp=usd_to_lbp,
                                           user_id=user_id,
                                           added_date=added_date)
 
