@@ -109,23 +109,17 @@ def delete_wallet_transaction():
     val, user = validate_token(request)
     if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
-    wallet_transaction_id = request.json.get('id', '')
-    if not wallet_transaction_id:
-        return jsonify({"error": "Missing required fields"}), 400
-    wallet_transaction = db.session.query(WalletTransaction).filter_by(id=wallet_transaction_id).first()
+    wallet_transaction = db.session.query(WalletTransaction).filter_by(user_id=user.id).all()
     if not wallet_transaction:
-        return jsonify({"error": "Invalid wallet transaction input"}), 400
-    if wallet_transaction.user_id != int(user.id):
-        return jsonify({"error": "Access is forbidden"}), 403
+        return jsonify({"error": "No transactions found"}), 400
+    wallet_transaction = wallet_transaction[-1]
     wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
     if not wallet.has_enough_usd(0, -wallet_transaction.usd_amount):
         return jsonify({"error": "Not enough USD balance to remove wallet transaction "
-                                 "without removing outstanding offers "
-                                 "or other previous wallet transactions."}), 401
+                                 "without removing outstanding offers "}), 401
     elif not wallet.has_enough_lbp(0, -wallet_transaction.lbp_amount):
         return jsonify({"error": "Not enough LBP balance to remove wallet transaction "
-                                 "without removing outstanding offers "
-                                 "or other previous wallet transactions."}), 401
+                                 "without removing outstanding offers "}), 401
     db.session.delete(wallet_transaction)
     db.session.commit()
     return '', 200
