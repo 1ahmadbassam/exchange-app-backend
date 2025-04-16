@@ -12,7 +12,8 @@ from flask_marshmallow import Marshmallow
 from flask_sqlalchemy import SQLAlchemy
 
 load_dotenv()
-from db_config import DB_CONFIG
+DB_CONFIG = (f'mysql+pymysql://{os.getenv("DB_USER")}:{os.getenv("DB_PASSWORD")}@{os.getenv("DB_HOST")}'
+             f':{os.getenv("DB_PORT")}/{os.getenv("DB_NAME")}')
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_CONFIG
