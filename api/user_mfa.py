@@ -8,6 +8,7 @@ from util.user import validate_token
 user_mfa_bp = Blueprint('user_mfa', __name__)
 user_schema = UserSchema()
 
+
 @user_mfa_bp.route('/mfa/register', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_mfa():

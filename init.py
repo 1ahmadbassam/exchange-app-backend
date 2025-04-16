@@ -7,9 +7,9 @@ from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_mail import Mail
 from flask_marshmallow import Marshmallow
 from flask_sqlalchemy import SQLAlchemy
-from flask_mail import Mail
 
 load_dotenv()
 from db_config import DB_CONFIG
@@ -25,7 +25,7 @@ limiter = Limiter(key_func=get_remote_address)
 limiter.init_app(app)
 ma = Marshmallow(app)
 bcrypt = Bcrypt(app)
-tz=datetime.timezone.utc
+tz = datetime.timezone.utc
 
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
 app.config['MAIL_PORT'] = os.getenv('MAIL_PORT')

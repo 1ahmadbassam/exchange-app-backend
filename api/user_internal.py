@@ -10,6 +10,7 @@ from util.user import PASSWORD_FORBIDDEN_CHARACTERS, test_password
 user_internal_bp = Blueprint('user_internal', __name__)
 user_schema = UserSchema()
 
+
 @user_internal_bp.route("/verify/<token>", methods=['GET'])
 @limiter.limit("10 per minute")
 def verify_user(token):
@@ -45,7 +46,8 @@ def password_reset_form(token):
         user = db.session.query(UnconfirmedUser).filter_by(email=email).scalar()
         if not user:
             return render_template("reset_error.html", error_message="Email not valid"), 403
-    return render_template("reset.html", reset_url=url_for("user_internal.password_reset", token=token, _external=True)), 200
+    return render_template("reset.html",
+                           reset_url=url_for("user_internal.password_reset", token=token, _external=True)), 200
 
 
 @user_internal_bp.route("/reset/<token>", methods=['POST'])
@@ -61,7 +63,8 @@ def password_reset(token):
             return jsonify({"error": "Email not valid"}), 403
 
     if not user.can_change_password():
-        return jsonify({"error": "Password changed recently. Please wait at least one hour since you last changed your password."}), 400
+        return jsonify({"error": "Password changed recently. "
+                                 "Please wait at least one hour since you last changed your password."}), 400
 
     password = request.json.get('password', '').strip()
     if not password:

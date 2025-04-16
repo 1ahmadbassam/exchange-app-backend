@@ -147,7 +147,8 @@ def password_reset_request():
         if not user:
             return jsonify({"error": "Email not valid"}), 403
     if not user.can_change_password():
-        return jsonify({"error": "Password changed recently. Please wait at least one hour since you last changed your password."}), 400
+        return jsonify({"error": "Password changed recently. "
+                                 "Please wait at least one hour since you last changed your password."}), 400
 
     # generate and send verification token
     token = generate_verification_token(email)

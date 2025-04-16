@@ -31,7 +31,7 @@ class User(db.Model):
 
     def update_password(self, password, hsh=True):
         self.hashed_password = bcrypt.generate_password_hash(password) if hsh else password
-        self.password_updated=datetime.datetime.now(tz)
+        self.password_updated = datetime.datetime.now(tz)
 
     def can_change_password(self):
         return datetime.datetime.now(tz) - self.password_updated.replace(tzinfo=tz) >= datetime.timedelta(hours=1)
@@ -68,7 +68,7 @@ class UnconfirmedUser(db.Model):
 
     def update_password(self, password, hsh=True):
         self.hashed_password = bcrypt.generate_password_hash(password) if hsh else password
-        self.password_updated=datetime.datetime.now(tz)
+        self.password_updated = datetime.datetime.now(tz)
 
     def can_change_password(self):
         return datetime.datetime.now(tz) - self.password_updated.replace(tzinfo=tz) >= datetime.timedelta(hours=1)
@@ -84,4 +84,3 @@ class UnconfirmedUserSchema(ma.Schema):
     class Meta:
         fields = ("user_name", "email", "created_at")
         model = UnconfirmedUser
-

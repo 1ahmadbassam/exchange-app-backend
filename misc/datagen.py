@@ -52,7 +52,7 @@ def populate_transactions(database, period="2yr"):
     while cur >= past:
         for _ in range(random.randint(30, 50)):
             cur = cur.replace(hour=random.randint(8, 20), minute=random.randint(0, 59), second=random.randint(0, 59),
-                        microsecond=random.randint(0, 999999))
+                              microsecond=random.randint(0, 999999))
             transaction = generate_transaction(cur)
             database.session.add(transaction)
         database.session.commit()

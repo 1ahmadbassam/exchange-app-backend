@@ -43,10 +43,10 @@ class MonthlyVolume(db.Model):
     def __init__(self, usd_to_lbp_total_amount, usd_to_lbp_transaction_count,
                  lbp_to_usd_total_amount, lbp_to_usd_transaction_count, date):
         super(MonthlyVolume, self).__init__(date=date,
-                                          usd_to_lbp_total_amount=usd_to_lbp_total_amount,
-                                          usd_to_lbp_transaction_count=usd_to_lbp_transaction_count,
-                                          lbp_to_usd_total_amount=lbp_to_usd_total_amount,
-                                          lbp_to_usd_transaction_count=lbp_to_usd_transaction_count)
+                                            usd_to_lbp_total_amount=usd_to_lbp_total_amount,
+                                            usd_to_lbp_transaction_count=usd_to_lbp_transaction_count,
+                                            lbp_to_usd_total_amount=lbp_to_usd_total_amount,
+                                            lbp_to_usd_transaction_count=lbp_to_usd_transaction_count)
 
 
 class MonthlyVolumeSchema(ma.Schema):

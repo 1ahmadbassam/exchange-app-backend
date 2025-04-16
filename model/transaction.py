@@ -26,7 +26,6 @@ class Transaction(db.Model):
                                           added_date=added_date)
 
 
-
 class TransactionSchema(ma.Schema):
     class Meta:
         fields = ("id", "usd_amount", "lbp_amount", "usd_to_lbp", "user_id", "added_date")

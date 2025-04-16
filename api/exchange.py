@@ -208,7 +208,7 @@ def exchange_rate_trend():
                                                     round(usd_to_lbp, 2),
                                                     round(abs(usd_to_lbp_delta), 2),
                                                     period)
-                            if usd_to_lbp_delta is not None else "Rates missing."},
+                        if usd_to_lbp_delta is not None else "Rates missing."},
                     "lbp_to_usd": {
                         "former_rate": lbp_to_usd_former,
                         "current_rate": lbp_to_usd,
@@ -216,10 +216,10 @@ def exchange_rate_trend():
                         "message": TREND_MSG.format("LBP-USD",
                                                     "risen" if lbp_to_usd_delta > 1e-6 else "fell",
                                                     round(lbp_to_usd_former, 2),
-                                                    round(lbp_to_usd,2),
+                                                    round(lbp_to_usd, 2),
                                                     round(abs(lbp_to_usd_delta), 2),
                                                     period)
-                            if lbp_to_usd_delta is not None else "Rates missing."}
+                        if lbp_to_usd_delta is not None else "Rates missing."}
                     })
 
 
@@ -293,7 +293,7 @@ def exchange_rate_volatility():
                                                          round(usd_to_lbp_min, 2),
                                                          round(usd_to_lbp_max, 2),
                                                          period)
-                            if usd_to_lbp_sd is not None else "Rates missing."},
+                        if usd_to_lbp_sd is not None else "Rates missing."},
                     "lbp_to_usd": {
                         "standard_deviation": lbp_to_usd_sd,
                         "min_rate": lbp_to_usd_min,
@@ -303,5 +303,5 @@ def exchange_rate_volatility():
                                                          round(lbp_to_usd_min, 2),
                                                          round(lbp_to_usd_max, 2),
                                                          period)
-                            if lbp_to_usd_sd is not None else "Rates missing."}
+                        if lbp_to_usd_sd is not None else "Rates missing."}
                     })
