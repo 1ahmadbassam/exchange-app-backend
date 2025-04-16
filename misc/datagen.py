@@ -7,6 +7,7 @@ from sqlalchemy import func
 from init import app, db, bcrypt, tz
 from model.transaction import Transaction
 from model.user import User
+from model.wallet import WalletTransaction
 
 const_pass = bcrypt.generate_password_hash("123")
 
@@ -23,8 +24,17 @@ def generate_transaction(added_date):
     usd_to_lbp = random.choice([True, False])
     user_id = random.randint(1, 5000)
 
-    return Transaction(usd_amount=usd_amount, lbp_amount=lbp_amount, usd_to_lbp=usd_to_lbp, user_id=user_id,
-                       added_date=added_date)
+    return (Transaction(usd_amount=usd_amount,
+                        lbp_amount=lbp_amount,
+                        usd_to_lbp=usd_to_lbp,
+                        user_id=user_id,
+                        added_date=added_date),
+            WalletTransaction(usd_amount=50000,
+                              lbp_amount=5000000000,
+                              user_id=user_id,
+                              description="Deposit",
+                              added_date=added_date)
+            )
 
 
 def populate_transactions(database, period="2yr"):
@@ -53,15 +63,17 @@ def populate_transactions(database, period="2yr"):
         for _ in range(random.randint(30, 50)):
             cur = cur.replace(hour=random.randint(8, 20), minute=random.randint(0, 59), second=random.randint(0, 59),
                               microsecond=random.randint(0, 999999))
-            transaction = generate_transaction(cur)
+            transaction, wt = generate_transaction(cur)
+            database.session.add(wt)
+            database.session.commit()
             database.session.add(transaction)
-        database.session.commit()
         cur = cur - datetime.timedelta(days=1)
         dt += 1
         if dt % 10 == 0:
             print(f"Progress: {int(100 * dt / full)}/100%")
             if int(100 * dt / full) == 100:
                 wu = True
+    database.session.commit()
     if not wu:
         print(f"Progress: 100/100%")
     cur = today
@@ -74,7 +86,9 @@ def populate_transactions(database, period="2yr"):
                 m = random.randint(0, 59)
             # no need to worry about second/millisecond increments
             cur = cur.replace(hour=h, minute=m, second=random.randint(0, 59), microsecond=random.randint(0, 999999))
-            transaction = generate_transaction(cur)
+            transaction, wt = generate_transaction(cur)
+            database.session.add(wt)
+            database.session.commit()
             database.session.add(transaction)
         database.session.commit()
 
@@ -85,4 +99,4 @@ if __name__ == '__main__':
         max_id = db.session.query(func.max(User.id)).scalar()
         for i in range(max_id + 1 if max_id else 1, 5001):
             generate_user(f"_genuser{i}")
-        populate_transactions(db)
+        populate_transactions(db, "24h")

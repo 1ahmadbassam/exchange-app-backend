@@ -54,21 +54,29 @@ def add_wallet_transaction():
     val, user = validate_token(request)
     if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
-    if not request.json or 'usd_amount' not in request.json or 'lbp_amount' not in request.json or 'description' not in request.json:
+    if not request.json or ('usd_amount' not in request.json and 'lbp_amount' not in request.json) or 'description' not in request.json:
         return jsonify({"error": "Missing required fields"}), 400
-    try:
-        usd_amount = float(request.json['usd_amount'])
-    except (ValueError, TypeError):
-        return jsonify({"error": "Invalid USD amount, must be a valid number"}), 400
-    try:
-        lbp_amount = float(request.json['lbp_amount'])
-    except (ValueError, TypeError):
-        return jsonify({"error": "Invalid LBP amount, must be a valid number"}), 400
+    if 'usd_amount' in request.json:
+        try:
+            usd_amount = float(request.json['usd_amount'])
+        except (ValueError, TypeError):
+            return jsonify({"error": "Invalid USD amount, must be a valid number"}), 400
+    else:
+        usd_amount = 0
+    if 'lbp_amount' in request.json:
+        try:
+            lbp_amount = float(request.json['lbp_amount'])
+        except (ValueError, TypeError):
+            return jsonify({"error": "Invalid LBP amount, must be a valid number"}), 400
+    else:
+        lbp_amount = 0
     description = request.json['description']
     wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
-    if usd_amount < 0 and not wallet.has_enough_usd(usd_amount):
+    print(usd_amount, lbp_amount, description)
+    print(wallet.has_enough_usd(usd_amount))
+    if not wallet.has_enough_usd(usd_amount):
         return jsonify({"error": "Not enough USD for transaction"}), 400
-    if lbp_amount < 0 and not wallet.has_enough_lbp(lbp_amount):
+    if not wallet.has_enough_lbp(lbp_amount):
         return jsonify({"error": "Not enough LBP for transaction"}), 400
     wl = WalletTransaction(usd_amount=usd_amount, lbp_amount=lbp_amount, description=description, user_id=user.id)
     db.session.add(wl)

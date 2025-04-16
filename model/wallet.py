@@ -24,10 +24,10 @@ class Wallet(db.Model):
         self.lbp_amount = 0
 
     def has_enough_lbp(self, lbp_amount, lbp_exc=0):
-        return self.lbp_amount + self.lbp_inflight + lbp_exc >= lbp_amount
+        return lbp_amount > 0 or self.lbp_amount + self.lbp_inflight + lbp_exc >= abs(lbp_amount)
 
     def has_enough_usd(self, usd_amount, usd_exc=0):
-        return self.usd_amount + self.usd_inflight + usd_exc >= usd_amount
+        return usd_amount > 0 or self.usd_amount + self.usd_inflight + usd_exc >= abs(usd_amount)
 
     def add_inflight(self, usd_amount=0, lbp_amount=0, usd_to_lbp=False):
         self.usd_inflight += -usd_amount if usd_to_lbp else 0

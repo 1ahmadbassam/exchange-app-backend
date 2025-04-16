@@ -49,9 +49,9 @@ def add_transaction():
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
             return jsonify({"error": "Invalid or expired token"}), 403
         wallet = db.session.query(Wallet).filter_by(user_id=user_id).first()
-        if usd_to_lbp and not wallet.has_enough_usd(usd_amount):
+        if usd_to_lbp and not wallet.has_enough_usd(-usd_amount):
             return jsonify({"error": "Not enough USD in wallet. Add more USD before attempting this transaction."}), 401
-        elif not wallet.has_enough_lbp(lbp_amount):
+        elif not usd_to_lbp and not wallet.has_enough_lbp(-lbp_amount):
             return jsonify({"error": "Not enough LBP in wallet. Add more LBP before attempting this transaction."}), 401
     transaction = Transaction(usd_amount=usd_amount, lbp_amount=lbp_amount, usd_to_lbp=usd_to_lbp, user_id=user_id)
     db.session.add(transaction)

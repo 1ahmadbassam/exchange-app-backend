@@ -42,9 +42,9 @@ def add_offer():
     except (ValueError, TypeError):
         return jsonify({"error": "Invalid usd_to_lbp, must be a boolean value"}), 400
     wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
-    if usd_to_lbp and not wallet.has_enough_usd(usd_amount):
+    if usd_to_lbp and not wallet.has_enough_usd(-usd_amount):
         return jsonify({"error": "Not enough USD in wallet. Add more USD before attempting this transaction."}), 401
-    elif not wallet.has_enough_lbp(lbp_amount):
+    elif not usd_to_lbp and not wallet.has_enough_lbp(-lbp_amount):
         return jsonify({"error": "Not enough LBP in wallet. Add more LBP before attempting this transaction."}), 401
     location = location.strip()
     phone_number = phone_number.strip()
@@ -119,9 +119,9 @@ def update_offer():
     else:
         usd_to_lbp = offer.usd_to_lbp
     wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
-    if usd_amount and usd_to_lbp is True and not wallet.has_enough_usd(usd_amount, offer.usd_amount):
+    if usd_amount and usd_to_lbp is True and not wallet.has_enough_usd(-usd_amount, offer.usd_amount):
         return jsonify({"error": "Not enough USD in wallet. Add more USD before attempting this transaction."}), 401
-    if lbp_amount and usd_to_lbp is False and not wallet.has_enough_lbp(lbp_amount, offer.lbp_amount):
+    if lbp_amount and usd_to_lbp is False and not wallet.has_enough_lbp(-lbp_amount, offer.lbp_amount):
         return jsonify({"error": "Not enough LBP in wallet. Add more LBP before attempting this transaction."}), 401
     if location is not None:
         location = location.strip()
@@ -171,9 +171,9 @@ def accept_offer():
     if offer.user_id == int(user.id):
         return jsonify({"error": "Invalid offer input - cannot accept own offer"}), 400
     wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
-    if offer.usd_to_lbp and not wallet.has_enough_usd(offer.usd_amount):
+    if offer.usd_to_lbp and not wallet.has_enough_usd(-offer.usd_amount):
         return jsonify({"error": "Not enough USD in wallet. Add more USD before accepting this transaction."}), 401
-    elif not wallet.has_enough_lbp(offer.lbp_amount):
+    elif not offer.usd_to_lbp and not wallet.has_enough_lbp(-offer.lbp_amount):
         return jsonify({"error": "Not enough LBP in wallet. Add more LBP before accepting this transaction."}), 401
     # restore loss to original user
     original_wallet = db.session.query(Wallet).filter_by(user_id=offer.user_id).first()
