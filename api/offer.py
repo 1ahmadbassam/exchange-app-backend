@@ -1,10 +1,9 @@
-import jwt
 from flask import Blueprint, request, jsonify
 
 from init import limiter, db
 from model.offer import Offer, OfferSchema
 from model.transaction import Transaction
-from util.token import extract_auth_jwt, decode_jwt
+from util.user import validate_token
 
 offer_bp = Blueprint('offer', __name__)
 offer_schema = OfferSchema()
@@ -14,12 +13,8 @@ offers_schema = OfferSchema(many=True)
 @offer_bp.route('/offer', methods=['POST'])
 @limiter.limit("10 per minute")
 def add_offer():
-    try:
-        token = extract_auth_jwt(request)
-        if not token:
-            raise jwt.InvalidTokenError
-        user_id = decode_jwt(token)
-    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+    val, user = validate_token(request)
+    if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
     usd_amount = request.json.get('usd_amount', None)
     lbp_amount = request.json.get('lbp_amount', None)
@@ -46,7 +41,7 @@ def add_offer():
         return jsonify({"error": "Invalid usd_to_lbp, must be a boolean value"}), 400
     location = location.strip()
     phone_number = phone_number.strip()
-    offer = Offer(usd_amount=usd_amount, lbp_amount=lbp_amount, usd_to_lbp=usd_to_lbp, user_id=user_id,
+    offer = Offer(usd_amount=usd_amount, lbp_amount=lbp_amount, usd_to_lbp=usd_to_lbp, user_id=user.id,
                   location=location, phone_number=phone_number)
     db.session.add(offer)
     db.session.commit()
@@ -56,12 +51,8 @@ def add_offer():
 @offer_bp.route('/offer/delete', methods=['POST'])
 @limiter.limit("10 per minute")
 def delete_offer():
-    try:
-        token = extract_auth_jwt(request)
-        if not token:
-            raise jwt.InvalidTokenError
-        user_id = decode_jwt(token)
-    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+    val, user = validate_token(request)
+    if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
     offer_id = request.json.get('offer_id', None)
     if offer_id is None:
@@ -69,7 +60,7 @@ def delete_offer():
     offer = Offer.query.get(offer_id)
     if offer is None:
         return jsonify({"error": "Invalid offer input"}), 400
-    if offer.user_id != int(user_id):
+    if offer.user_id != int(user.id):
         return jsonify({"error": "Access is forbidden"}), 403
     db.session.delete(offer)
     db.session.commit()
@@ -79,12 +70,8 @@ def delete_offer():
 @offer_bp.route('/offer/update', methods=['POST'])
 @limiter.limit("10 per minute")
 def update_offer():
-    try:
-        token = extract_auth_jwt(request)
-        if not token:
-            raise jwt.InvalidTokenError
-        user_id = decode_jwt(token)
-    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+    val, user = validate_token(request)
+    if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
     offer_id = request.json.get('offer_id', None)
     if offer_id is None:
@@ -92,7 +79,7 @@ def update_offer():
     offer = Offer.query.get(offer_id)
     if offer is None:
         return jsonify({"error": "Invalid offer input"}), 400
-    if offer.user_id != int(user_id):
+    if offer.user_id != int(user.id):
         return jsonify({"error": "Access is forbidden"}), 403
     usd_amount = request.json.get('usd_amount', None)
     lbp_amount = request.json.get('lbp_amount', None)
@@ -141,26 +128,18 @@ def get_available_offers():
 @offer_bp.route('/offer/my', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_my_offers():
-    token = extract_auth_jwt(request)
-    if not token:
+    val, user = validate_token(request)
+    if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
-    try:
-        user_id = decode_jwt(token)
-    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-        return jsonify({"error": "Invalid or expired token"}), 403
-    offers = db.session.query(Offer).filter_by(user_id=user_id).all()
+    offers = db.session.query(Offer).filter_by(user_id=user.id).all()
     return jsonify(offers_schema.dump(offers)), 200
 
 
 @offer_bp.route('/offer/accept', methods=['POST'])
 @limiter.limit("10 per minute")
 def accept_offer():
-    try:
-        token = extract_auth_jwt(request)
-        if not token:
-            raise jwt.InvalidTokenError
-        user_id = decode_jwt(token)
-    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+    val, user = validate_token(request)
+    if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
     offer_id = request.json.get('offer_id', None)
     if offer_id is None:
@@ -168,11 +147,11 @@ def accept_offer():
     offer = Offer.query.get(offer_id)
     if offer is None:
         return jsonify({"error": "Invalid offer input"}), 400
-    if offer.user_id == int(user_id):
+    if offer.user_id == int(user.id):
         return jsonify({"error": "Invalid offer input - cannot accept own offer"}), 400
     offer.available = False
     transaction = Transaction(usd_amount=offer.usd_amount, lbp_amount=offer.lbp_amount, usd_to_lbp=offer.usd_to_lbp,
-                              user_id=user_id)
+                              user_id=user.id)
     db.session.add(transaction)
     db.session.commit()
     return jsonify(offer_schema.dump(offer)), 200
