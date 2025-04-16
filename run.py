@@ -1,9 +1,9 @@
 from api.exchange import exchange_bp
 from api.offer import offer_bp
 from api.transaction import transaction_bp
-from api.user import user_bp
-from api.user_internal import user_internal_bp
-from api.user_mfa import user_mfa_bp
+from api.user.base import user_bp
+from api.user.internal import user_internal_bp
+from api.user.mfa import user_mfa_bp
 from api.wallet import wallet_bp
 from init import app, db
 
