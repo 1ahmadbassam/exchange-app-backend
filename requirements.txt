@@ -40,3 +40,4 @@ email_validator==2.2.0
 pyotp==2.9.0
 qrcode==8.1
 pillow==11.2.1
+phonenumbers==9.0.3

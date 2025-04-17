@@ -1,3 +1,4 @@
+import phonenumbers
 from flask import Blueprint, request, jsonify
 
 from init import limiter, db
@@ -41,13 +42,20 @@ def add_offer():
         usd_to_lbp = bool(usd_to_lbp)
     except (ValueError, TypeError):
         return jsonify({"error": "Invalid usd_to_lbp, must be a boolean value"}), 400
+    phone_number = phone_number.strip()
+    try:
+        if not phonenumbers.is_valid_number(phonenumbers.parse(phone_number)):
+            return jsonify({"error": "Invalid phone number"}), 400
+    except phonenumbers.phonenumberutil.NumberParseException:
+        return jsonify({"error": "Invalid phone number"}), 400
+    location = location.strip()
+    if not location or len(location) > 128:
+        return jsonify({"error": "Invalid location, must be present and less than 128 characters"}), 400
     wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
     if usd_to_lbp and not wallet.has_enough_usd(-usd_amount):
         return jsonify({"error": "Not enough USD in wallet. Add more USD before attempting this transaction."}), 401
     elif not usd_to_lbp and not wallet.has_enough_lbp(-lbp_amount):
         return jsonify({"error": "Not enough LBP in wallet. Add more LBP before attempting this transaction."}), 401
-    location = location.strip()
-    phone_number = phone_number.strip()
     offer = Offer(usd_amount=usd_amount, lbp_amount=lbp_amount, usd_to_lbp=usd_to_lbp, user_id=user.id,
                   location=location, phone_number=phone_number)
     wallet.add_inflight(usd_amount, lbp_amount, usd_to_lbp)
@@ -125,10 +133,15 @@ def update_offer():
         return jsonify({"error": "Not enough LBP in wallet. Add more LBP before attempting this transaction."}), 401
     if location is not None:
         location = location.strip()
-        offer.location = location
+        if not location or len(location) > 128:
+            return jsonify({"error": "Invalid location, must be present and less than 128 characters"}), 400
     if phone_number is not None:
         phone_number = phone_number.strip()
-        offer.phone_number = phone_number
+        try:
+            if not phonenumbers.is_valid_number(phonenumbers.parse(phone_number)):
+                return jsonify({"error": "Invalid phone number"}), 400
+        except phonenumbers.phonenumberutil.NumberParseException:
+            return jsonify({"error": "Invalid phone number"}), 400
     # update inflight
     wallet.remove_inflight(offer.usd_amount, offer.lbp_amount, offer.usd_to_lbp)
     offer.usd_amount = usd_amount

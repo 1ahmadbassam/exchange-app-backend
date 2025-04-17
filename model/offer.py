@@ -12,7 +12,7 @@ class Offer(db.Model):
     lbp_amount: Mapped[float] = mapped_column(nullable=False)
     usd_to_lbp: Mapped[bool] = mapped_column(nullable=False)
     user_id: Mapped[int] = mapped_column(db.ForeignKey('user.id'), nullable=False)
-    location: Mapped[str] = mapped_column(String(100), nullable=False)
+    location: Mapped[str] = mapped_column(String(128), nullable=False)
     phone_number: Mapped[str] = mapped_column(String(20), nullable=False)
     available: Mapped[bool] = mapped_column(nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(nullable=False)
