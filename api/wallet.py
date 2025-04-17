@@ -6,10 +6,6 @@ from model.wallet import Wallet, WalletTransaction, WalletSchema, WalletInflight
 from util.user import validate_token
 
 wallet_bp = Blueprint('wallet', __name__)
-wallet_schema = WalletSchema()
-wallet_inflight_schema = WalletInflightSchema()
-wallet_transaction_schema = WalletTransactionSchema()
-wallet_transactions_schema = WalletTransactionSchema(many=True)
 
 
 @wallet_bp.route('/wallet', methods=['GET'])
@@ -19,6 +15,7 @@ def get_wallet():
     if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
     wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
+    wallet_schema = WalletSchema()
     return jsonify(wallet_schema.dump(wallet)), 200
 
 
@@ -29,6 +26,7 @@ def get_wallet_inflight():
     if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
     wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
+    wallet_inflight_schema = WalletInflightSchema()
     return jsonify(wallet_inflight_schema.dump(wallet)), 200
 
 
@@ -46,6 +44,7 @@ def get_wallet_transaction():
         return jsonify({"error": "Invalid wallet transaction input"}), 400
     if wallet_transaction.user_id != int(user.id):
         return jsonify({"error": "Access is forbidden"}), 403
+    wallet_transaction_schema = WalletTransactionSchema()
     return jsonify(wallet_transaction_schema.dump(wallet_transaction)), 200
 
 
@@ -56,6 +55,7 @@ def get_wallet_transactions():
     if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
     wallet_transactions = db.session.query(WalletTransaction).filter_by(user_id=user.id).all()
+    wallet_transactions_schema = WalletTransactionSchema(many=True)
     return jsonify(wallet_transactions_schema.dump(wallet_transactions)), 200
 
 
@@ -90,6 +90,7 @@ def add_wallet_transaction():
     wl = WalletTransaction(usd_amount=usd_amount, lbp_amount=lbp_amount, description=description, user_id=user.id)
     db.session.add(wl)
     db.session.commit()
+    wallet_transaction_schema = WalletTransactionSchema()
     return jsonify(wallet_transaction_schema.dump(wl)), 200
 
 
