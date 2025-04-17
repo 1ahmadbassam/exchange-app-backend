@@ -43,7 +43,7 @@ info:
   license:
     name: GNU General Public License v3.0
     url: https://www.gnu.org/licenses/gpl-3.0.html
-  version: 1.0.2
+  version: 1.0.3
 tags:
   - name: "Exchange Rates"
     description: "Endpoints related to exchange rate information."
@@ -61,6 +61,8 @@ tags:
     description: "Endpoints for managing peer-to-peer exchange offers between users."
   - name: "Wallet Management"
     description: "Endpoints related to managing the user's wallet, including transactions, balances, and wallet reset functionality."
+  - name: "Dealer Management"
+    description: "Endpoints for registering, updating, deleting, and retrieving exchange dealers."
 servers:
   - url: http://127.0.0.1:5000
     description: Local development server
@@ -1555,13 +1557,13 @@ paths:
                   - user_id
                   - usd_inflight
                   - lbp_inflight
-                examples:
-                  Example:
-                    summary: Example wallet inflight details
-                    value:
-                      user_id: 1
-                      usd_inflight: 50.00
-                      lbp_inflight: 750000
+              examples:
+                Example:
+                  summary: Example wallet inflight details
+                  value:
+                    user_id: 1
+                    usd_inflight: 50.00
+                    lbp_inflight: 750000
         '403':
           description: Invalid or expired token
           content:
@@ -1571,6 +1573,242 @@ paths:
                   summary: Invalid or expired token
                   value:
                     error: "Invalid or expired token"
+  /dealer/register:
+    post:
+      summary: Register a new dealer
+      tags: [ Dealer Management ]
+      description: |
+        Allows an authenticated user to register as an exchange dealer. 
+        Each user can only register once. Requires all fields including location, exchange rates, and phone number.
+        All input fields are validated for their ranges.
+      operationId: registerDealer
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        $ref: '#/components/requestBodies/DealerRegistrationRequest'
+      responses:
+        '200':
+          description: Dealer successfully registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dealer'
+              examples:
+                Example:
+                  summary: Example dealer record
+                  value:
+                    id: 1
+                    lng: 35.4955
+                    lat: 33.8886
+                    name: "Exchange Beirut"
+                    address: "Hamra Street, Beirut"
+                    rating: 4.8
+                    usd_to_lbp: 89500
+                    lbp_to_usd: 88000
+                    phone_number: "+96171234567"
+                    created_at: "2025-04-17T14:30:00Z"
+        '400':
+          description: Invalid input or already registered
+          content:
+            application/json:
+              examples:
+                AlreadyRegistered:
+                  summary: Already registered
+                  value:
+                    error: "Already registered as dealer"
+        '403':
+          description: Invalid or expired token
+          content:
+            application/json:
+              examples:
+                InvalidToken:
+                  summary: Invalid or expired token
+                  value:
+                    error: "Invalid or expired token"
+  /dealer/unregister:
+    post:
+      summary: Unregister dealer
+      tags: [ Dealer Management ]
+      description: |
+        Allows an authenticated user to unregister as a dealer.
+        Deletes dealer entry for a given user.
+        If MFA is enabled, a valid OTP must be provided.
+      operationId: unregisterDealer
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                otp:
+                  type: string
+            examples:
+              WithOTP:
+                summary: With MFA
+                value:
+                  otp: "123456"
+      responses:
+        '200':
+          description: Dealer successfully unregistered
+        '400':
+          description: Not registered or missing required fields
+          content:
+            application/json:
+              examples:
+                NotRegistered:
+                  summary: Not registered as dealer
+                  value:
+                    error: "Not registered as dealer"
+        '401':
+          description: TOTP required
+          content:
+            application/json:
+              examples:
+                Required:
+                  value:
+                    error: "TOTP Required"
+        '403':
+          description: Invalid OTP or invalid authentication token
+          content:
+            application/json:
+              examples:
+                InvalidOtp:
+                  summary: Invalid OTP
+                  value:
+                    error: "Invalid OTP"
+                InvalidToken:
+                  summary: Invalid or expired token
+                  value:
+                    error: "Invalid or expired token"
+  /dealer/update:
+    post:
+      summary: Update dealer profile
+      tags: [ Dealer Management ]
+      description: |
+        Allows a registered dealer to update any subset of their profile fields.
+        All profile fields must be within their valid ranges.
+      operationId: updateDealer
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        $ref: '#/components/requestBodies/DealerUpdateRequest'
+      responses:
+        '200':
+          description: Dealer profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dealer'
+              examples:
+                Example:
+                  summary: Example dealer record
+                  value:
+                    id: 1
+                    lng: 35.4955
+                    lat: 33.8886
+                    name: "Exchange Beirut"
+                    address: "Hamra Street, Beirut"
+                    rating: 4.8
+                    usd_to_lbp: 89800
+                    lbp_to_usd: 89700
+                    phone_number: "+96171234567"
+                    created_at: "2025-04-17T14:30:00Z"
+        '400':
+          description: Invalid input or not registered as dealer
+          content:
+            application/json:
+              examples:
+                InvalidField:
+                  summary: Invalid rating
+                  value:
+                    error: "Invalid rating, must be between 0 and 5"
+                NotRegistered:
+                  summary: Not registered as dealer
+                  value:
+                    error: "Not registered as dealer"
+        '403':
+          description: Invalid or expired token
+          content:
+            application/json:
+              examples:
+                InvalidToken:
+                  summary: Invalid or expired token
+                  value:
+                    error: "Invalid or expired token"
+  /dealer:
+    get:
+      summary: Retrieve a single dealer by ID or token
+      tags: [ Dealer Management ]
+      description: |
+        If a dealer ID is provided, retrieves that dealer. Otherwise, retrieves the dealer profile of the authenticated user.
+        If a token is provided, it must be valid; otherwise, the request is rejected. This endpoint is publicly available
+        given a dealer ID is provided.
+      operationId: getDealer
+      security:
+        - bearerAuth: [ ]
+        - { }
+      parameters:
+        - name: id
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Optional dealer ID
+      responses:
+        '200':
+          description: Dealer record retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dealer'
+              examples:
+                Example:
+                  summary: Example dealer record
+                  value:
+                    id: 1
+                    lng: 35.4955
+                    lat: 33.8886
+                    name: "Exchange Beirut"
+                    address: "Hamra Street, Beirut"
+                    rating: 4.8
+                    usd_to_lbp: 89500
+                    lbp_to_usd: 88000
+                    phone_number: "+96171234567"
+                    created_at: "2025-04-17T14:30:00Z"
+        '400':
+          description: Dealer not found or bad input
+          content:
+            application/json:
+              examples:
+                NotRegistered:
+                  summary: Not registered
+                  value:
+                    error: "Not registered as dealer"
+                Missing:
+                  summary: No ID and no token
+                  value:
+                    error: "Missing required fields"
+        '403':
+          description: Invalid or expired token
+          content:
+            application/json:
+              examples:
+                InvalidToken:
+                  summary: Invalid or expired token
+                  value:
+                    error: "Invalid or expired token"
+  /dealers:
+    get:
+      summary: Retrieve all dealers
+      tags: [ Dealer Management ]
+      description: |
+        Publicly available endpoint that returns all registered dealer entries.
+      operationId: getAllDealers
+      responses:
+        '200':
+          $ref: '#/components/responses/DealersResponse'
 components:
   schemas:
     UnconfirmedUser:
@@ -1732,13 +1970,6 @@ components:
         - user_id
         - usd_amount
         - lbp_amount
-      examples:
-        Example:
-          summary: Example wallet details
-          value:
-            user_id: 1
-            usd_amount: 100.50
-            lbp_amount: 9002000
     WalletTransaction:
       type: object
       properties:
@@ -1769,16 +2000,55 @@ components:
         - added_date
         - user_id
         - description
-      examples:
-        Example:
-          summary: Example wallet transaction
-          value:
-            id: 101
-            usd_amount: 20.00
-            lbp_amount: 300000
-            added_date: "2025-04-14T08:30:00Z"
-            user_id: 1
-            description: "USD to LBP exchange"
+    Dealer:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the dealer.
+        lng:
+          type: number
+          format: float
+          description: Longitude coordinate of the dealer's location.
+        lat:
+          type: number
+          format: float
+          description: Latitude coordinate of the dealer's location.
+        name:
+          type: string
+          description: Name of the dealer.
+        address:
+          type: string
+          description: Physical address of the dealer.
+        rating:
+          type: number
+          format: float
+          description: Dealer's rating over 5.
+        usd_to_lbp:
+          type: number
+          format: float
+          description: Dealer's offered exchange rate from USD to LBP.
+        lbp_to_usd:
+          type: number
+          format: float
+          description: Dealer's offered exchange rate from LBP to USD.
+        phone_number:
+          type: string
+          description: Contact phone number for the dealer.
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the dealer entry was created.
+      required:
+        - lng
+        - lat
+        - name
+        - address
+        - rating
+        - usd_to_lbp
+        - lbp_to_usd
+        - phone_number
+        - created_at
   parameters:
     StartDate:
       name: start_date
@@ -1939,6 +2209,86 @@ components:
                 usd_amount: 20.00
                 lbp_amount: 1800000
                 description: "USD to LBP exchange"
+    DealerRegistrationRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - lng
+              - lat
+              - name
+              - address
+              - rating
+              - usd_to_lbp
+              - lbp_to_usd
+              - phone_number
+            properties:
+              lng:
+                type: number
+              lat:
+                type: number
+              name:
+                type: string
+                maxLength: 128
+              address:
+                type: string
+                maxLength: 128
+              rating:
+                type: number
+                minimum: 0
+                maximum: 5
+              usd_to_lbp:
+                type: number
+              lbp_to_usd:
+                type: number
+              phone_number:
+                type: string
+          examples:
+            Example:
+              summary: Dealer registration
+              value:
+                lng: 35.4955
+                lat: 33.8886
+                name: "Exchange Beirut"
+                address: "Hamra Street"
+                rating: 4.9
+                usd_to_lbp: 89500
+                lbp_to_usd: 88000
+                phone_number: "+96171234567"
+    DealerUpdateRequest:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              lng:
+                type: number
+              lat:
+                type: number
+              name:
+                type: string
+                maxLength: 128
+              address:
+                type: string
+                maxLength: 128
+              rating:
+                type: number
+                minimum: 0
+                maximum: 5
+              usd_to_lbp:
+                type: number
+              lbp_to_usd:
+                type: number
+              phone_number:
+                type: string
+          examples:
+            PartialUpdate:
+              summary: Updating only rates
+              value:
+                usd_to_lbp: 90000
+                lbp_to_usd: 88500
   responses:
     TransactionCreated:
       description: Transaction successfully added
@@ -2434,6 +2784,38 @@ components:
               summary: Not enough LBP
               value:
                 error: Not enough LBP in wallet. Add more LBP before attempting this transaction.
+    DealersResponse:
+      description: List of all dealers
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Dealer'
+          examples:
+            ExampleList:
+              summary: Example dealer list
+              value:
+                - id: 1
+                  lng: 35.5
+                  lat: 33.9
+                  name: "Beirut FX"
+                  address: "Hamra"
+                  rating: 4.9
+                  usd_to_lbp: 89500
+                  lbp_to_usd: 88000
+                  phone_number: "+96171234567"
+                  created_at: "2025-04-17T14:30:00Z"
+                - id: 2
+                  lng: 35.6
+                  lat: 34.0
+                  name: "Tripoli Money"
+                  address: "Downtown"
+                  rating: 4.7
+                  usd_to_lbp: 89000
+                  lbp_to_usd: 87500
+                  phone_number: "+96170000000"
+                  created_at: "2025-04-17T15:00:00Z"
   securitySchemes:
     bearerAuth:
       type: http

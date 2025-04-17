@@ -1,3 +1,4 @@
+from api.dealer import dealer_bp
 from api.exchange import exchange_bp
 from api.offer import offer_bp
 from api.transaction import transaction_bp
@@ -14,6 +15,7 @@ app.register_blueprint(transaction_bp)
 app.register_blueprint(exchange_bp)
 app.register_blueprint(offer_bp)
 app.register_blueprint(wallet_bp)
+app.register_blueprint(dealer_bp)
 
 if __name__ == "__main__":
     with app.app_context():
