@@ -99,4 +99,4 @@ if __name__ == '__main__':
         max_id = db.session.query(func.max(User.id)).scalar()
         for i in range(max_id + 1 if max_id else 1, 5001):
             generate_user(f"_genuser{i}")
-        populate_transactions(db, "24h")
+        populate_transactions(db, "2yr")
