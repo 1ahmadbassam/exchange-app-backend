@@ -144,8 +144,10 @@ def update_offer():
             return jsonify({"error": "Invalid phone number"}), 400
     # update inflight
     wallet.remove_inflight(offer.usd_amount, offer.lbp_amount, offer.usd_to_lbp)
-    offer.usd_amount = usd_amount
-    offer.lbp_amount = lbp_amount
+    if usd_amount:
+        offer.usd_amount = usd_amount
+    if lbp_amount:
+        offer.lbp_amount = lbp_amount
     offer.usd_to_lbp = usd_to_lbp
     wallet.add_inflight(usd_amount, lbp_amount, usd_to_lbp)
     db.session.commit()
