@@ -11,6 +11,9 @@ from util.token import extract_auth_jwt, decode_jwt
 from util.transaction import get_monthly_transaction_volume, get_daily_transaction_volume
 from util.user import validate_token
 
+transaction_schema = TransactionSchema()
+transactions_schema = TransactionSchema(many=True)
+
 transaction_bp = Blueprint('transaction', __name__)
 
 
@@ -53,7 +56,6 @@ def add_transaction():
     transaction = Transaction(usd_amount=usd_amount, lbp_amount=lbp_amount, usd_to_lbp=usd_to_lbp, user_id=user_id)
     db.session.add(transaction)
     db.session.commit()
-    transaction_schema = TransactionSchema()
     return jsonify(transaction_schema.dump(transaction)), 200
 
 
@@ -64,7 +66,6 @@ def get_all_transactions():
     if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
     transactions = db.session.query(Transaction).filter_by(user_id=user.id).all()
-    transactions_schema = TransactionSchema(many=True)
     return jsonify(transactions_schema.dump(transactions)), 200
 
 

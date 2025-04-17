@@ -6,6 +6,7 @@ from util.token import get_b64encoded_qr_image
 from util.user import validate_token
 
 user_mfa_bp = Blueprint('user_mfa', __name__)
+user_schema = UserSchema()
 
 
 @user_mfa_bp.route('/mfa/register', methods=['GET'])
@@ -17,7 +18,6 @@ def get_mfa():
     if user.mfa:
         return jsonify({"error": "MFA already enabled"}), 400
     uri = user.get_authentication_setup_uri()
-    user_schema = UserSchema()
     return jsonify({"user": user_schema.dump(user), "uri": uri, "qr": get_b64encoded_qr_image(uri)}), 200
 
 

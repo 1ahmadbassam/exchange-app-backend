@@ -9,6 +9,8 @@ from util.token import create_jwt, generate_verification_token
 from util.user import USER_FORBIDDEN_CHARACTERS, PASSWORD_FORBIDDEN_CHARACTERS, test_password, validate_token
 
 user_bp = Blueprint('user', __name__)
+user_schema = UserSchema()
+u_user_schema = UnconfirmedUserSchema()
 
 
 @user_bp.route('/user', methods=['GET'])
@@ -17,7 +19,6 @@ def get_user():
     val, user = validate_token(request)
     if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
-    user_schema = UserSchema()
     return jsonify(user_schema.dump(user)), 200
 
 
@@ -73,7 +74,7 @@ def create_user():
     html = render_template("verify_mail.html", confirm_url=confirm_url)
     subject = "LBP Exchange Tracker - Confirm your email"
     send_email(u_user.email, subject, html)
-    u_user_schema = UnconfirmedUserSchema()
+
     return jsonify(u_user_schema.dump(u_user)), 200
 
 
@@ -121,7 +122,7 @@ def resend_verify_user():
     html = render_template("verify_mail.html", confirm_url=confirm_url)
     subject = "LBP Exchange Tracker - Confirm your email"
     send_email(email, subject, html)
-    u_user_schema = UnconfirmedUserSchema()
+
     return jsonify(u_user_schema.dump(u_user)), 200
 
 

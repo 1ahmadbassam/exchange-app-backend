@@ -3,11 +3,12 @@ import datetime
 from flask import render_template, jsonify, request, url_for, Blueprint
 
 from init import limiter, db, bcrypt, tz
-from model.user import User, UnconfirmedUser
+from model.user import User, UnconfirmedUser, UserSchema
 from util.token import confirm_verification_token
 from util.user import PASSWORD_FORBIDDEN_CHARACTERS, test_password
 
 user_internal_bp = Blueprint('user_internal', __name__)
+user_schema = UserSchema()
 
 
 @user_internal_bp.route("/verify/<token>", methods=['GET'])

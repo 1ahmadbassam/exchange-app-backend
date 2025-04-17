@@ -8,6 +8,8 @@ from util.user import validate_token
 from util.wallet import add_two_way_wallet_transaction
 
 offer_bp = Blueprint('offer', __name__)
+offer_schema = OfferSchema()
+offers_schema = OfferSchema(many=True)
 
 
 @offer_bp.route('/offer', methods=['POST'])
@@ -51,7 +53,6 @@ def add_offer():
     wallet.add_inflight(usd_amount, lbp_amount, usd_to_lbp)
     db.session.add(offer)
     db.session.commit()
-    offer_schema = OfferSchema()
     return jsonify(offer_schema.dump(offer)), 200
 
 
@@ -135,7 +136,6 @@ def update_offer():
     offer.usd_to_lbp = usd_to_lbp
     wallet.add_inflight(usd_amount, lbp_amount, usd_to_lbp)
     db.session.commit()
-    offer_schema = OfferSchema()
     return jsonify(offer_schema.dump(offer)), 200
 
 
@@ -143,7 +143,6 @@ def update_offer():
 @limiter.limit("10 per minute")
 def get_available_offers():
     offers = db.session.query(Offer).filter_by(available=True).all()
-    offers_schema = OfferSchema(many=True)
     return jsonify(offers_schema.dump(offers)), 200
 
 
@@ -154,7 +153,6 @@ def get_my_offers():
     if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
     offers = db.session.query(Offer).filter_by(user_id=user.id).all()
-    offers_schema = OfferSchema(many=True)
     return jsonify(offers_schema.dump(offers)), 200
 
 
@@ -186,5 +184,4 @@ def accept_offer():
     db.session.add(transaction)
     db.session.commit()
     add_two_way_wallet_transaction(transaction, offer.user_id)
-    offer_schema = OfferSchema()
     return jsonify(offer_schema.dump(offer)), 200
