@@ -65,7 +65,9 @@ def add_wallet_transaction():
     val, user = validate_token(request)
     if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
-    if not request.json or ('usd_amount' not in request.json and 'lbp_amount' not in request.json) or 'description' not in request.json:
+    if (not request.json
+            or ('usd_amount' not in request.json and 'lbp_amount' not in request.json)
+            or 'description' not in request.json):
         return jsonify({"error": "Missing required fields"}), 400
     if 'usd_amount' in request.json:
         try:

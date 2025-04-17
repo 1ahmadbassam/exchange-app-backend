@@ -58,3 +58,17 @@ def validate_token(request):
     if not user:
         return False, None
     return True, user
+
+
+def validate_optional_token(request):
+    token = extract_auth_jwt(request)
+    if not token:
+        return True, None
+    try:
+        user_id = decode_jwt(token)
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        return False, None
+    user = db.session.query(User).filter_by(id=user_id).first()
+    if not user:
+        return False, None
+    return True, user

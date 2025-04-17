@@ -1,15 +1,13 @@
 import datetime
 
-import jwt
 from dateutil.relativedelta import relativedelta
 from flask import Blueprint, request, jsonify
 
 from init import db, limiter
 from model.transaction import Transaction, TransactionSchema
 from model.wallet import Wallet
-from util.token import extract_auth_jwt, decode_jwt
 from util.transaction import get_monthly_transaction_volume, get_daily_transaction_volume
-from util.user import validate_token
+from util.user import validate_token, validate_optional_token
 
 transaction_schema = TransactionSchema()
 transactions_schema = TransactionSchema(many=True)
@@ -41,19 +39,19 @@ def add_transaction():
         usd_to_lbp = bool(request.json['usd_to_lbp'])
     except (ValueError, TypeError):
         return jsonify({"error": "Invalid usd_to_lbp, must be a boolean value"}), 400
-    token = extract_auth_jwt(request)
-    user_id = None
-    if token is not None:
-        try:
-            user_id = decode_jwt(token)
-        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-            return jsonify({"error": "Invalid or expired token"}), 403
-        wallet = db.session.query(Wallet).filter_by(user_id=user_id).first()
+    val, user = validate_optional_token(request)
+    if not val:
+        return jsonify({"error": "Invalid or expired token"}), 403
+    if user:
+        wallet = db.session.query(Wallet).filter_by(user_id=user.id).first()
         if usd_to_lbp and not wallet.has_enough_usd(-usd_amount):
             return jsonify({"error": "Not enough USD in wallet. Add more USD before attempting this transaction."}), 401
         elif not usd_to_lbp and not wallet.has_enough_lbp(-lbp_amount):
             return jsonify({"error": "Not enough LBP in wallet. Add more LBP before attempting this transaction."}), 401
-    transaction = Transaction(usd_amount=usd_amount, lbp_amount=lbp_amount, usd_to_lbp=usd_to_lbp, user_id=user_id)
+    transaction = Transaction(usd_amount=usd_amount,
+                              lbp_amount=lbp_amount,
+                              usd_to_lbp=usd_to_lbp,
+                              user_id=user.id if user else None)
     db.session.add(transaction)
     db.session.commit()
     return jsonify(transaction_schema.dump(transaction)), 200

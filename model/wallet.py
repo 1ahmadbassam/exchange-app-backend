@@ -43,6 +43,7 @@ class Wallet(db.Model):
         self.usd_inflight = 0
         self.lbp_inflight = 0
 
+
 class WalletTransaction(db.Model):
     __tablename__ = 'wallet_transaction'
 
