@@ -73,7 +73,10 @@ def create_user():
     confirm_url = url_for("user_internal.verify_user", token=token, _external=True)
     html = render_template("verify_mail.html", confirm_url=confirm_url)
     subject = "LBP Exchange Tracker - Confirm your email"
-    send_email(u_user.email, subject, html)
+    try:
+        send_email(u_user.email, subject, html)
+    except Exception as e:
+        return jsonify({"error": f"Internal error. {e}"}), 500
 
     return jsonify(u_user_schema.dump(u_user)), 200
 
@@ -121,7 +124,10 @@ def resend_verify_user():
     confirm_url = url_for("user_internal.verify_user", token=token, _external=True)
     html = render_template("verify_mail.html", confirm_url=confirm_url)
     subject = "LBP Exchange Tracker - Confirm your email"
-    send_email(email, subject, html)
+    try:
+        send_email(email, subject, html)
+    except Exception as e:
+        return jsonify({"error": f"Internal error. {e}"}), 500
 
     return jsonify(u_user_schema.dump(u_user)), 200
 
@@ -155,7 +161,10 @@ def password_reset_request():
     confirm_url = url_for("user_internal.password_reset_form", token=token, _external=True)
     html = render_template("reset_mail.html", confirm_url=confirm_url)
     subject = "LBP Exchange Tracker - Reset your password"
-    send_email(email, subject, html)
+    try:
+        send_email(email, subject, html)
+    except Exception as e:
+        return jsonify({"error": f"Internal error. {e}"}), 500
     return '', 200
 
 
