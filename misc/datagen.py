@@ -5,10 +5,10 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy import func
 
 from init import app, db, bcrypt, tz
+from model.accessibility import Accessibility
 from model.transaction import Transaction
 from model.user import User
 from model.wallet import WalletTransaction
-from model.accessibility import Accessibility
 
 const_pass = bcrypt.generate_password_hash("123")
 

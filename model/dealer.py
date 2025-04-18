@@ -35,5 +35,6 @@ class Dealer(db.Model):
 
 class DealerSchema(ma.Schema):
     class Meta:
-        fields = ("id", "lng", "lat", "name", "address", "rating", "usd_to_lbp", "lbp_to_usd", "phone_number", "created_at")
+        fields = ("id", "lng", "lat", "name", "address", "rating",
+                  "usd_to_lbp", "lbp_to_usd", "phone_number", "created_at")
         model = Dealer
