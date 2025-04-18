@@ -65,6 +65,8 @@ tags:
     description: "Endpoints for registering, updating, deleting, and retrieving exchange dealers."
   - name: "Accessibility Management"
     description: "Endpoints for managing user accessibility settings, such as inverted colors, sonification, and narration."
+  - name: "News Management"
+    description: "Endpoints for retrieving news articles, including headlines, content, and associated metadata."
 servers:
   - url: http://127.0.0.1:5000
     description: Local development server
@@ -1902,6 +1904,34 @@ paths:
                   summary: Invalid or expired token
                   value:
                     error: "Invalid or expired token"
+  /news:
+    get:
+      summary: Retrieve a list of news articles
+      tags: [ News Management ]
+      description: |
+        This endpoint retrieves news articles. You can optionally specify the number of news articles to retrieve using the `count` query parameter. 
+        If no count is provided, all available news articles will be returned (max 50). 
+        News articles are asynchronously refreshed on the backend every 15 minutes without the need for requests to this endpoint.
+      operationId: getNews
+      parameters:
+        - name: count
+          in: query
+          required: false
+          schema:
+            type: integer
+            description: Number of news articles to retrieve.
+      responses:
+        '200':
+          $ref: '#/components/responses/NewsResponse'
+        '400':
+          description: Invalid count query parameter
+          content:
+            application/json:
+              examples:
+                InvalidCount:
+                  summary: Invalid count parameter
+                  value:
+                    error: "Invalid count value, must be greater than 0."
 components:
   schemas:
     UnconfirmedUser:
@@ -2162,6 +2192,51 @@ components:
         - inverted_colors
         - sonification
         - narration
+    News:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the news article.
+        headline:
+          type: string
+          description: The headline of the news article.
+        content:
+          type: string
+          description: Additional content of the news article.
+        source:
+          type: string
+          description: The source from which the news article is derived.
+        impact:
+          type: integer
+          description: Impact score of the news article (over 100).
+        impact_summary:
+          type: string
+          description: A summary of the impact of the news article.
+        confidence:
+          type: number
+          format: float
+          description: The confidence level in the accuracy of the impact rating of the news article (0 to 1).
+        timestamp:
+          type: string
+          format: date-time
+          description: The timestamp when the news article was published.
+        url:
+          type: string
+          description: The URL of the news article.
+        image:
+          type: string
+          description: Base64 encoded image associated with the news article.
+      required:
+        - headline
+        - content
+        - source
+        - impact
+        - impact_summary
+        - confidence
+        - timestamp
+        - url
+        - image
   parameters:
     StartDate:
       name: start_date
@@ -2951,6 +3026,38 @@ components:
                   lbp_to_usd: 87500
                   phone_number: "+96170000000"
                   created_at: "2025-04-17T15:00:00Z"
+    NewsResponse:
+      description: List of news articles
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/News'
+          examples:
+            Success:
+              summary: List of news articles
+              value:
+                - id: 1
+                  headline: "Global Economy Update"
+                  content: "The global economy is experiencing significant shifts due to various factors..."
+                  source: "Reuters"
+                  impact: 85
+                  impact_summary: "Significant changes are predicted, potentially impacting the LBP-USD rates."
+                  confidence: 0.95
+                  timestamp: "2025-04-17T10:30:00Z"
+                  url: "https://example.com/global-economy-update"
+                  image: "https://example.com/image.jpg"
+                - id: 2
+                  headline: "Tech Innovations in 2025"
+                  content: "Technological advancements are accelerating rapidly in various fields..."
+                  source: "TechCrunch"
+                  impact: 38
+                  impact_summary: "While not directly related to the exchange rate, technological advancements can improve. the economy on the short-to-long term."
+                  confidence: 0.85
+                  timestamp: "2025-04-17T09:00:00Z"
+                  url: "https://example.com/tech-innovations-2025"
+                  image: "https://example.com/tech-image.jpg"
   securitySchemes:
     bearerAuth:
       type: http

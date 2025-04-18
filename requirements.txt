@@ -41,3 +41,11 @@ pyotp==2.9.0
 qrcode==8.1
 pillow==11.2.1
 phonenumbers==9.0.3
+requests==2.32.3
+rss-parser==2.1.0
+xmltodict==0.13.0
+protobuf==6.30.2
+pydantic==2.11.3
+google-genai==1.11.0
+deep-translator==1.11.4
+Flask-APScheduler==1.13.1

@@ -1,6 +1,8 @@
 from api.accessibility import accessibility_bp
 from api.dealer import dealer_bp
 from api.exchange import exchange_bp
+from api.news.base import news_bp
+from api.news.retrieve import news_update_initial
 from api.offer import offer_bp
 from api.transaction import transaction_bp
 from api.user.base import user_bp
@@ -18,8 +20,10 @@ app.register_blueprint(offer_bp)
 app.register_blueprint(wallet_bp)
 app.register_blueprint(dealer_bp)
 app.register_blueprint(accessibility_bp)
+app.register_blueprint(news_bp)
 
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
+        news_update_initial()
     app.run(debug=False)
