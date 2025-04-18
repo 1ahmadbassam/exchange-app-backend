@@ -5,7 +5,7 @@ import requests
 from rss_parser import RSSParser
 
 from api.news.ai import score_news
-from init import MARKETAUX_KEY, db, scheduler
+from init import MARKETAUX_KEY, db, scheduler, app
 from model.news import News
 from util.news.base import (MARKETAUX_API, image_to_base64, RSS_FEEDS, remove_referrers,
                             RSS_TIMESTAMP_FMT, LANG, translate_items, MARKETAUX_TIMESTAMP_FMT)
@@ -102,29 +102,30 @@ def retrieve_news(after: datetime.datetime = None, limit: int = 3):
 
 @scheduler.task('interval', id='news_update', minutes=15)
 def news_update():
-    last_refresh = db.session.query(News).order_by(News.timestamp.desc()).first()
-    c = db.session.query(News).count()
-    news = retrieve_news(last_refresh)
-    if c + len(news) > 50:
-        items_to_delete = (c + len(news)) - 50
-        old_news = db.session.query(News).order_by(News.timestamp.asc()).limit(items_to_delete).all()
-        for item in old_news:
-            db.session.delete(item)
-    for news_item in news:
-        try:
-            db_item = News(headline=news_item['headline'],
-                           content=news_item['description'],
-                           source=news_item['source'],
-                           impact=int(news_item['impact_score']),
-                           impact_summary=news_item['impact_reasoning'],
-                           confidence=float(news_item['confidence']),
-                           timestamp=news_item['timestamp'],
-                           url=news_item['url'],
-                           image=news_item['image'])
-            db.session.add(db_item)
-            db.session.commit()
-        except Exception as e:
-            print("Exception occurred:", e)
+    with app.app_context():
+        last_refresh = db.session.query(News).order_by(News.timestamp.desc()).first()
+        c = db.session.query(News).count()
+        news = retrieve_news(last_refresh)
+        if c + len(news) > 50:
+            items_to_delete = (c + len(news)) - 50
+            old_news = db.session.query(News).order_by(News.timestamp.asc()).limit(items_to_delete).all()
+            for item in old_news:
+                db.session.delete(item)
+        for news_item in news:
+            try:
+                db_item = News(headline=news_item['headline'],
+                               content=news_item['description'],
+                               source=news_item['source'],
+                               impact=int(news_item['impact_score']),
+                               impact_summary=news_item['impact_reasoning'],
+                               confidence=float(news_item['confidence']),
+                               timestamp=news_item['timestamp'],
+                               url=news_item['url'],
+                               image=news_item['image'])
+                db.session.add(db_item)
+                db.session.commit()
+            except Exception as e:
+                print("Exception occurred:", e)
 
 
 def news_update_initial():
