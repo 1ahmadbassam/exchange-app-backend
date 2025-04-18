@@ -11,7 +11,7 @@ from model.user import User
 class Wallet(db.Model):
     __tablename__ = 'wallet'
 
-    user_id: Mapped[int] = mapped_column(db.ForeignKey('user.id'), primary_key=True, nullable=True)
+    user_id: Mapped[int] = mapped_column(db.ForeignKey('user.id'), primary_key=True, nullable=False)
     usd_amount: Mapped[float] = mapped_column(nullable=False, default=0)
     usd_inflight: Mapped[float] = mapped_column(nullable=False, default=0)
     lbp_amount: Mapped[float] = mapped_column(nullable=False, default=0)
