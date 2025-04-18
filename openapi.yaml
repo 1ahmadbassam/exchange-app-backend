@@ -63,6 +63,8 @@ tags:
     description: "Endpoints related to managing the user's wallet, including transactions, balances, and wallet reset functionality."
   - name: "Dealer Management"
     description: "Endpoints for registering, updating, deleting, and retrieving exchange dealers."
+  - name: "Accessibility Management"
+    description: "Endpoints for managing user accessibility settings, such as inverted colors, sonification, and narration."
 servers:
   - url: http://127.0.0.1:5000
     description: Local development server
@@ -1809,6 +1811,86 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/DealersResponse'
+  /accessibility:
+    get:
+      summary: Retrieve the accessibility settings for the authenticated user
+      tags: [ Accessibility Management ]
+      description: |
+        This endpoint retrieves the accessibility settings (inverted colors, sonification, narration) of the authenticated user.
+        A valid JWT token is required in the Authorization header.
+      operationId: getAccessibility
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Accessibility settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Accessibility'
+              examples:
+                Success:
+                  summary: Retrieved accessibility settings
+                  value:
+                    user_id: 1
+                    inverted_colors: true
+                    sonification: false
+                    narration: true
+        '403':
+          description: Invalid or expired token
+          content:
+            application/json:
+              examples:
+                InvalidToken:
+                  summary: Invalid or expired token
+                  value:
+                    error: "Invalid or expired token"
+    post:
+      summary: Update the accessibility settings for the authenticated user
+      tags: [ Accessibility Management ]
+      description: |
+        Allows the authenticated user to update their accessibility settings. The user can enable or disable features such as
+        inverted colors, sonification, and narration. A valid JWT token is required in the Authorization header.
+        Only the changed entries can be updated using this API by providing the valid feature tag and value, and the others could
+        be left unchanged.
+      operationId: setAccessibility
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        $ref: '#/components/requestBodies/AccessibilityUpdate'
+      responses:
+        '200':
+          description: Accessibility settings successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Accessibility'
+              examples:
+                Success:
+                  summary: Successfully updated accessibility settings
+                  value:
+                    user_id: 1
+                    inverted_colors: true
+                    sonification: false
+                    narration: true
+        '400':
+          description: Invalid input for a feature
+          content:
+            application/json:
+              examples:
+                InvalidSonification:
+                  summary: Invalid value for sonification
+                  value:
+                    error: "Invalid value for sonification, must be a boolean"
+        '403':
+          description: Invalid or expired token
+          content:
+            application/json:
+              examples:
+                InvalidToken:
+                  summary: Invalid or expired token
+                  value:
+                    error: "Invalid or expired token"
 components:
   schemas:
     UnconfirmedUser:
@@ -2049,6 +2131,26 @@ components:
         - lbp_to_usd
         - phone_number
         - created_at
+    Accessibility:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          description: The unique ID of the user associated with the accessibility settings.
+        inverted_colors:
+          type: boolean
+          description: Whether inverted colors are enabled for the user interface.
+        sonification:
+          type: boolean
+          description: Whether sonification (audio cues) is enabled for the user interface.
+        narration:
+          type: boolean
+          description: Whether narration (audio descriptions) is enabled for the user interface.
+      required:
+        - user_id
+        - inverted_colors
+        - sonification
+        - narration
   parameters:
     StartDate:
       name: start_date
@@ -2289,6 +2391,28 @@ components:
               value:
                 usd_to_lbp: 90000
                 lbp_to_usd: 88500
+    AccessibilityUpdate:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              inverted_colors:
+                type: boolean
+                description: Enable or disable inverted colors
+              sonification:
+                type: boolean
+                description: Enable or disable sonification (audio cues)
+              narration:
+                type: boolean
+                description: Enable or disable narration (audio descriptions)
+          examples:
+            Example:
+              summary: Update accessibility settings
+              value:
+                inverted_colors: true
+                narration: true
   responses:
     TransactionCreated:
       description: Transaction successfully added

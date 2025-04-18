@@ -8,6 +8,7 @@ from init import app, db, bcrypt, tz
 from model.transaction import Transaction
 from model.user import User
 from model.wallet import WalletTransaction
+from model.accessibility import Accessibility
 
 const_pass = bcrypt.generate_password_hash("123")
 
@@ -16,6 +17,10 @@ def generate_user(user_name):
     user = User(user_name=user_name, password=const_pass, email=user_name, hsh=False)
     db.session.add(user)
     db.session.commit()
+    # force accessibility table to get parsed
+    accessibility = db.session.query(Accessibility).filter_by(user_id=user.id).first()
+    if not accessibility:
+        raise ValueError("Accessibility not found")
 
 
 def generate_transaction(added_date):
