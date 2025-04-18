@@ -74,9 +74,11 @@ paths:
       summary: Authenticate user and issue JWT token
       tags: [ User Management ]
       description: >
-        Authenticates a user using their username and password. If successful, a
+        Authenticates a verified user using their username and password. If successful, a
         JWT token is returned for subsequent requests. The token must be
         included in the Authorization header as a bearer token.
+        If a user has not verified their email, an appropriate error is returned informing
+        the user to verify it.
       operationId: authenticateUser
       requestBody:
         $ref: '#/components/requestBodies/Authentication'
@@ -114,6 +116,15 @@ paths:
                   summary: Incorrect OTP
                   value:
                     error: Invalid OTP
+        '409':
+          description: Email not verified
+          content:
+            application/json:
+              examples:
+                VerifyEmail:
+                  summary: Verify email before logging in
+                  value:
+                    error: Please verify your email before logging in
   /user:
     get:
       summary: Retrieve the authenticated user's details

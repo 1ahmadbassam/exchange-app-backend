@@ -181,6 +181,8 @@ def authenticate_user():
     user = db.session.execute(db.select(User).filter_by(user_name=user_name)).scalar()
 
     if not user or not bcrypt.check_password_hash(user.hashed_password, password):
+        if db.session.query(UnconfirmedUser).filter_by(user_name=user_name).scalar():
+            return jsonify({"error": "Please verify your email before logging in"}), 409
         return jsonify({"error": "Invalid credentials"}), 403
 
     if not otp and user.mfa:
