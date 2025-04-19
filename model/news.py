@@ -33,6 +33,6 @@ class News(db.Model):
 
 class NewsSchema(ma.Schema):
     class Meta:
-        fields = (
-        "id", "headline", "content", "source", "impact", "impact_summary", "confidence", "timestamp", "url", "image")
+        fields = ("id", "headline", "content", "source", "impact", "impact_summary",
+                  "confidence", "timestamp", "url", "image")
         model = News
