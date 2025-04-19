@@ -23,7 +23,7 @@ policy = PasswordPolicy.from_names(
     numbers=2,
     special=1,
     strength=0.4,
-    entropybits=70  # 70 bits of entropy is a fair compromise between alphabetical, numeric, and ASCII characters
+    entropybits=50  # 50 bits of entropy is a fair compromise between alphabetical, numeric, and ASCII characters
 )
 
 
