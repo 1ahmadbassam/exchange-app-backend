@@ -6,21 +6,22 @@ from sqlalchemy import func
 
 from init import app, db, bcrypt, tz
 from model.accessibility.base import Accessibility
+from model.dealer import Dealer
+from model.offer import Offer
 from model.transaction import Transaction
 from model.user import User
 from model.wallet import WalletTransaction
 
 const_pass = bcrypt.generate_password_hash("123")
-
+# force tables to get loaded
+a = Accessibility
+d = Dealer
+o = Offer
 
 def generate_user(user_name):
     user = User(user_name=user_name, password=const_pass, email=user_name, hsh=False)
     db.session.add(user)
     db.session.commit()
-    # force accessibility table to get parsed
-    accessibility = db.session.query(Accessibility).filter_by(user_id=user.id).first()
-    if not accessibility:
-        raise ValueError("Accessibility not found")
 
 
 def generate_transaction(added_date):

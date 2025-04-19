@@ -20,6 +20,11 @@ class User(db.Model):
     verified_at: Mapped[datetime.datetime] = mapped_column(nullable=True)
     password_updated: Mapped[datetime.datetime] = mapped_column(nullable=False)
 
+    __dealer = db.relationship("Dealer", cascade="all, delete", backref="user")
+    __offer = db.relationship("Offer", cascade="all, delete", backref="user")
+    __wallet = db.relationship("Wallet", cascade="all, delete", backref="user")
+    __accessibility = db.relationship("Accessibility", cascade="all, delete", backref="user")
+
     def __init__(self, user_name, password, email, hsh=True, created_at=datetime.datetime.now(tz), verified_at=None):
         super(User, self).__init__(user_name=user_name,
                                    email=email,

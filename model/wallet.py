@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import String, event, CheckConstraint
+from sqlalchemy import String, event
 from sqlalchemy.orm import Mapped, mapped_column, sessionmaker
 
 from init import db, tz, ma
@@ -17,8 +17,7 @@ class Wallet(db.Model):
     lbp_amount: Mapped[float] = mapped_column(nullable=False, default=0)
     lbp_inflight: Mapped[float] = mapped_column(nullable=False, default=0)
 
-    __table_args__ = (CheckConstraint('usd_amount >= 0', name='usd_amount_nonnegative'),
-                      CheckConstraint('lbp_amount >= 0', name='lbp_amount_nonnegative'),)
+    __wallet_transactions = db.relationship("WalletTransaction", cascade="all, delete", backref="wallet")
 
     def __init__(self, user_id):
         super(Wallet, self).__init__(user_id=user_id)

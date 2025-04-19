@@ -14,7 +14,7 @@ class Transaction(db.Model):
     lbp_amount: Mapped[float] = mapped_column(nullable=False)
     usd_to_lbp: Mapped[bool] = mapped_column(nullable=False)
     added_date: Mapped[datetime.datetime] = mapped_column(nullable=False)
-    user_id: Mapped[int] = mapped_column(db.ForeignKey('user.id'), nullable=True)
+    user_id: Mapped[int] = mapped_column(db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True)
     offer: Mapped[bool] = mapped_column(nullable=False, default=False)
 
     __table_args__ = (CheckConstraint('usd_amount > 0', name='usd_amount_positive'),
