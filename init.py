@@ -20,6 +20,7 @@ except ImportError:
                  f':{os.getenv("DB_PORT")}/{os.getenv("DB_NAME")}')
 
 app = Flask(__name__)
+PORT = os.getenv('PORT')
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_CONFIG
 app.config['APP_NAME'] = "LBP Exchange Tracker"
 SECRET_KEY = os.getenv("SECRET_KEY")

@@ -11,7 +11,7 @@ from api.user.base import user_bp
 from api.user.internal import user_internal_bp
 from api.user.mfa import user_mfa_bp
 from api.wallet import wallet_bp
-from init import app, db
+from init import app, db, PORT
 
 app.register_blueprint(user_bp)
 app.register_blueprint(user_internal_bp)
@@ -30,4 +30,8 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
         news_update_initial()
-    app.run(debug=False)
+    if PORT:
+        port = PORT
+    else:
+        port = 5000
+    app.run(host="0.0.0.0", port=port, debug=False)
