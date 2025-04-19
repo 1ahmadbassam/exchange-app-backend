@@ -1390,7 +1390,7 @@ paths:
                   summary: Retrieved wallet transaction details
                   value:
                     id: 101
-                    usd_amount: 20.00
+                    usd_amount: -20.00
                     lbp_amount: 1800000
                     added_date: "2025-04-14T08:30:00Z"
                     user_id: 1
@@ -1443,7 +1443,7 @@ paths:
                   summary: Successfully added wallet transaction
                   value:
                     id: 103
-                    usd_amount: 20.00
+                    usd_amount: -20.00
                     lbp_amount: 1800000
                     added_date: "2025-04-15T10:00:00Z"
                     user_id: 1
@@ -1459,6 +1459,52 @@ paths:
                     error: "Missing required fields"
         '401':
           $ref: '#/components/responses/BalanceNeededResponse'
+        '403':
+          description: Invalid or expired token
+          content:
+            application/json:
+              examples:
+                InvalidToken:
+                  summary: Invalid or expired token
+                  value:
+                    error: "Invalid or expired token"
+  /wallet/transactions:
+    get:
+      summary: Retrieve all wallet transactions for the authenticated user
+      tags: [ Wallet Management ]
+      description: |
+        This endpoint retrieves all wallet transactions associated with the authenticated user.
+        The user must provide a valid JWT token in the Authorization header. 
+        If the token is valid, the user's wallet transactions are returned.
+        If the token is invalid or expired, an error response is provided.
+      operationId: getWalletTransactions
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: List of wallet transactions for the authenticated user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WalletTransaction'
+              examples:
+                Success:
+                  summary: Retrieved list of wallet transactions
+                  value:
+                    - id: 101
+                      usd_amount: -20.00
+                      lbp_amount: 1800000
+                      added_date: "2025-04-14T08:30:00Z"
+                      user_id: 1
+                      description: "USD to LBP exchange"
+                    - id: 109
+                      usd_amount: 10.00
+                      lbp_amount: -900000
+                      added_date: "2025-04-15T09:00:00Z"
+                      user_id: 1
+                      description: "LBP to USD exchange"
         '403':
           description: Invalid or expired token
           content:
