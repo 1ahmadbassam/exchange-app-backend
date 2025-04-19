@@ -1,4 +1,6 @@
 import base64
+import html
+import re
 from io import BytesIO
 from urllib.parse import urlparse, urlunparse
 
@@ -43,6 +45,14 @@ def remove_referrers(url):
     parsed_url = urlparse(url)
     clean_url = parsed_url._replace(query="")
     return urlunparse(clean_url)
+
+
+def clean_html_data(data):
+    if not data:
+        return None
+    decoded_data = html.unescape(data)
+    clean_data = re.sub(r'<br\s*/?>', ' ', decoded_data)
+    return clean_data
 
 
 def translate_items(items):

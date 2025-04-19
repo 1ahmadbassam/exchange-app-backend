@@ -8,7 +8,7 @@ from api.news.ai import score_news
 from init import MARKETAUX_KEY, db, scheduler, app
 from model.news import News
 from util.news.base import (MARKETAUX_API, image_to_base64, RSS_FEEDS, remove_referrers,
-                            RSS_TIMESTAMP_FMT, LANG, translate_items, MARKETAUX_TIMESTAMP_FMT)
+                            RSS_TIMESTAMP_FMT, LANG, translate_items, MARKETAUX_TIMESTAMP_FMT, clean_html_data)
 from util.news.rss import RSS
 
 
@@ -33,8 +33,8 @@ def retrieve_news_marketaux(after: datetime.datetime = None, limit: int = 3):
     news = []
     if data:
         for entry in data:
-            headline = entry.get('title', None)
-            description = entry.get('description', None)
+            headline = clean_html_data(entry.get('title', None))
+            description = clean_html_data(entry.get('description', None))
             url = entry.get('url', None)
             image_url = entry.get('image_url', None)
             image = image_to_base64(image_url)
@@ -63,9 +63,9 @@ def retrieve_news_rss(after: datetime.datetime = None, limit: int = 3):
         source = urlparse(feed).netloc
         for i in range(min(len(rss.channel.items), limit)):
             item = rss.channel.items[i]
-            headline = item.title.content
+            headline = clean_html_data(item.title.content)
             if item.description:
-                description = item.description.content
+                description = clean_html_data(item.description.content)
             else:
                 description = ""
             url = remove_referrers(item.links[0].content)
