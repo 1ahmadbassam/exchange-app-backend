@@ -10,7 +10,7 @@ user_schema = UserSchema()
 
 
 @user_mfa_bp.route('/check', methods=['GET'])
-@limiter.limit(rate='10 per minute')
+@limiter.limit("10 per minute")
 def get_mfa_check():
     val, user = validate_token(request)
     if not val:
