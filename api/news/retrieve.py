@@ -73,6 +73,7 @@ def retrieve_news_rss(after: datetime.datetime = None, limit: int = 3):
                 image = item.media.attributes['url']
             else:
                 image = ""
+            image = image_to_base64(image)
             timestamp = datetime.datetime.strptime(item.pub_date.content, RSS_TIMESTAMP_FMT)
             if after and timestamp < after:
                 break
