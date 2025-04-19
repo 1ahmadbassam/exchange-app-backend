@@ -5,7 +5,7 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy import func
 
 from init import app, db, bcrypt, tz
-from model.accessibility import Accessibility
+from model.accessibility.base import Accessibility
 from model.transaction import Transaction
 from model.user import User
 from model.wallet import WalletTransaction

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 
 from init import limiter, db
-from model.accessibility import AccessibilitySchema, Accessibility
+from model.accessibility.base import AccessibilitySchema, Accessibility
 from util.user import validate_token
 
 accessibility_bp = Blueprint('accessibility', __name__)

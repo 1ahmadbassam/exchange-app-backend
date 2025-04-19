@@ -1,4 +1,4 @@
-from api.accessibility import accessibility_bp
+from api.accessibility.base import accessibility_bp
 from api.dealer import dealer_bp
 from api.exchange import exchange_bp
 from api.news.base import news_bp
