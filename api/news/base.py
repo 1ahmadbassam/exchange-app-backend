@@ -3,11 +3,11 @@ from flask import Blueprint, jsonify, request
 from init import limiter, db
 from model.news import NewsSchema, News
 
-news_bp = Blueprint('news', __name__)
+news_bp = Blueprint('news', __name__, url_prefix='/news')
 news_schema = NewsSchema(many=True)
 
 
-@news_bp.route('/news', methods=['GET'])
+@news_bp.route('', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_news():
     count = request.args.get('count', '')

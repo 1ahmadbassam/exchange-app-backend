@@ -8,12 +8,12 @@ from model.wallet import Wallet
 from util.user import validate_token
 from util.wallet import add_two_way_wallet_transaction
 
-offer_bp = Blueprint('offer', __name__)
+offer_bp = Blueprint('offer', __name__, url_prefix='/offer')
 offer_schema = OfferSchema()
 offers_schema = OfferSchema(many=True)
 
 
-@offer_bp.route('/offer', methods=['POST'])
+@offer_bp.route('', methods=['POST'])
 @limiter.limit("10 per minute")
 def add_offer():
     val, user = validate_token(request)
@@ -64,7 +64,7 @@ def add_offer():
     return jsonify(offer_schema.dump(offer)), 200
 
 
-@offer_bp.route('/offer/delete', methods=['POST'])
+@offer_bp.route('/delete', methods=['POST'])
 @limiter.limit("10 per minute")
 def delete_offer():
     val, user = validate_token(request)
@@ -86,7 +86,7 @@ def delete_offer():
     return '', 200
 
 
-@offer_bp.route('/offer/update', methods=['POST'])
+@offer_bp.route('/update', methods=['POST'])
 @limiter.limit("10 per minute")
 def update_offer():
     val, user = validate_token(request)
@@ -154,14 +154,14 @@ def update_offer():
     return jsonify(offer_schema.dump(offer)), 200
 
 
-@offer_bp.route('/offer/available', methods=['GET'])
+@offer_bp.route('/available', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_available_offers():
     offers = db.session.query(Offer).filter_by(available=True).all()
     return jsonify(offers_schema.dump(offers)), 200
 
 
-@offer_bp.route('/offer/my', methods=['GET'])
+@offer_bp.route('/my', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_my_offers():
     val, user = validate_token(request)
@@ -171,7 +171,7 @@ def get_my_offers():
     return jsonify(offers_schema.dump(offers)), 200
 
 
-@offer_bp.route('/offer/accept', methods=['POST'])
+@offer_bp.route('/accept', methods=['POST'])
 @limiter.limit("10 per minute")
 def accept_offer():
     val, user = validate_token(request)

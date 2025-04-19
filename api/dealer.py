@@ -5,12 +5,12 @@ from init import limiter, db
 from model.dealer import DealerSchema, Dealer
 from util.user import validate_token, validate_optional_token
 
-dealer_bp = Blueprint('dealer', __name__)
+dealer_bp = Blueprint('dealer', __name__, url_prefix='/dealer')
 dealer_schema = DealerSchema()
 dealers_schema = DealerSchema(many=True)
 
 
-@dealer_bp.route('/dealer/register', methods=['POST'])
+@dealer_bp.route('/register', methods=['POST'])
 @limiter.limit("10 per minute")
 def dealer_register():
     val, user = validate_token(request)
@@ -86,7 +86,7 @@ def dealer_register():
     return jsonify(dealer_schema.dump(dealer)), 200
 
 
-@dealer_bp.route('/dealer/unregister', methods=['POST'])
+@dealer_bp.route('/unregister', methods=['POST'])
 def dealer_unregister():
     val, user = validate_token(request)
     if not val:
@@ -104,7 +104,7 @@ def dealer_unregister():
     return '', 200
 
 
-@dealer_bp.route('/dealer/update', methods=['POST'])
+@dealer_bp.route('/update', methods=['POST'])
 @limiter.limit("10 per minute")
 def dealer_update():
     val, user = validate_token(request)
@@ -190,7 +190,7 @@ def dealer_update():
     return jsonify(dealer_schema.dump(dealer)), 200
 
 
-@dealer_bp.route('/dealer', methods=['GET'])
+@dealer_bp.route('', methods=['GET'])
 @limiter.limit("10 per minute")
 def dealer_get():
     val, user = validate_optional_token(request)
@@ -210,7 +210,7 @@ def dealer_get():
     return jsonify(dealer_schema.dump(dealer)), 200
 
 
-@dealer_bp.route('/dealers', methods=['GET'])
+@dealer_bp.route('/all', methods=['GET'])
 @limiter.limit("10 per minute")
 def dealers_get():
     dealers = db.session.query(Dealer).all()

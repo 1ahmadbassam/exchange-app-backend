@@ -12,10 +12,10 @@ from util.user import validate_token, validate_optional_token
 transaction_schema = TransactionSchema()
 transactions_schema = TransactionSchema(many=True)
 
-transaction_bp = Blueprint('transaction', __name__)
+transaction_bp = Blueprint('transaction', __name__, url_prefix='/transaction')
 
 
-@transaction_bp.route('/transaction', methods=['POST'])
+@transaction_bp.route('', methods=['POST'])
 @limiter.limit("10 per minute")
 def add_transaction():
     if not request.json or 'usd_amount' not in request.json or 'lbp_amount' not in request.json or 'usd_to_lbp' not in request.json:
@@ -57,7 +57,7 @@ def add_transaction():
     return jsonify(transaction_schema.dump(transaction)), 200
 
 
-@transaction_bp.route('/transaction', methods=['GET'])
+@transaction_bp.route('', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_all_transactions():
     val, user = validate_token(request)
@@ -67,7 +67,7 @@ def get_all_transactions():
     return jsonify(transactions_schema.dump(transactions)), 200
 
 
-@transaction_bp.route('/transaction/volume/daily', methods=['GET'])
+@transaction_bp.route('/volume/daily', methods=['GET'])
 @limiter.limit("10 per minute")
 def transaction_volume_daily():
     start_date = request.args.get("start_date", "").strip()
@@ -99,7 +99,7 @@ def transaction_volume_daily():
     return jsonify(volumes), 200
 
 
-@transaction_bp.route('/transaction/volume/monthly', methods=['GET'])
+@transaction_bp.route('/volume/monthly', methods=['GET'])
 @limiter.limit("10 per minute")
 def transaction_volume_monthly():
     start_date = request.args.get("start_date", "").strip()

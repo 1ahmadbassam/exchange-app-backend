@@ -4,11 +4,11 @@ from init import limiter, db
 from model.accessibility.base import AccessibilitySchema, Accessibility
 from util.user import validate_token
 
-accessibility_bp = Blueprint('accessibility', __name__)
+accessibility_bp = Blueprint('accessibility', __name__, url_prefix='/accessibility')
 accessibility_schema = AccessibilitySchema()
 
 
-@accessibility_bp.route('/accessibility', methods=['GET'])
+@accessibility_bp.route('', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_accessibility():
     val, user = validate_token(request)
@@ -18,7 +18,7 @@ def get_accessibility():
     return jsonify(accessibility_schema.dump(accessibility)), 200
 
 
-@accessibility_bp.route('/accessibility', methods=['POST'])
+@accessibility_bp.route('', methods=['POST'])
 @limiter.limit("10 per minute")
 def set_accessibility():
     val, user = validate_token(request)

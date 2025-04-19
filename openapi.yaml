@@ -1814,7 +1814,7 @@ paths:
                   summary: Invalid or expired token
                   value:
                     error: "Invalid or expired token"
-  /dealers:
+  /dealer/all:
     get:
       summary: Retrieve all dealers
       tags: [ Dealer Management ]

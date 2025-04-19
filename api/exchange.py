@@ -8,17 +8,17 @@ from init import limiter, tz
 from util.exchange import VOLATILITY_MSG, TREND_MSG, get_daily_exchange_rate, get_exchange_rate, \
     get_monthly_exchange_rate
 
-exchange_bp = Blueprint('exchange', __name__)
+exchange_bp = Blueprint('exchange', __name__, url_prefix='/exchangeRate')
 
 
-@exchange_bp.route('/exchangeRate', methods=['GET'])
+@exchange_bp.route('', methods=['GET'])
 @limiter.limit("10 per minute")
 def exchange_rate():
     usd_to_lbp, lbp_to_usd = get_daily_exchange_rate()
     return jsonify({'usd_to_lbp': usd_to_lbp, 'lbp_to_usd': lbp_to_usd}), 200
 
 
-@exchange_bp.route('/exchangeRate/hourly', methods=['GET'])
+@exchange_bp.route('/hourly', methods=['GET'])
 @limiter.limit("10 per minute")
 def exchange_rate_hourly():
     rates = []
@@ -30,7 +30,7 @@ def exchange_rate_hourly():
     return jsonify(rates[::-1]), 200
 
 
-@exchange_bp.route('/exchangeRate/daily', methods=['GET'])
+@exchange_bp.route('/daily', methods=['GET'])
 @limiter.limit("10 per minute")
 def exchange_rate_daily():
     start_date = request.args.get("start_date", "").strip()
@@ -64,7 +64,7 @@ def exchange_rate_daily():
     return jsonify(rates), 200
 
 
-@exchange_bp.route('/exchangeRate/monthly', methods=['GET'])
+@exchange_bp.route('/monthly', methods=['GET'])
 @limiter.limit("10 per minute")
 def exchange_rate_monthly():
     start_date = request.args.get("start_date", "").strip()
@@ -87,7 +87,7 @@ def exchange_rate_monthly():
     return jsonify(rates), 200
 
 
-@exchange_bp.route('/exchangeRate/trend', methods=['GET'])
+@exchange_bp.route('/trend', methods=['GET'])
 @limiter.limit("10 per minute")
 def exchange_rate_trend():
     period = request.args.get("period", "").strip()
@@ -144,7 +144,7 @@ def exchange_rate_trend():
                     })
 
 
-@exchange_bp.route('/exchangeRate/volatility', methods=['GET'])
+@exchange_bp.route('/volatility', methods=['GET'])
 @limiter.limit("10 per minute")
 def exchange_rate_volatility():
     period = request.args.get("period", "").strip()

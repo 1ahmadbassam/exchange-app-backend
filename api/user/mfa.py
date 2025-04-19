@@ -5,11 +5,11 @@ from model.user import UserSchema
 from util.token import get_b64encoded_qr_image
 from util.user import validate_token
 
-user_mfa_bp = Blueprint('user_mfa', __name__)
+user_mfa_bp = Blueprint('user_mfa', __name__, url_prefix='/mfa')
 user_schema = UserSchema()
 
 
-@user_mfa_bp.route('/mfa/register', methods=['GET'])
+@user_mfa_bp.route('/register', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_mfa():
     val, user = validate_token(request)
@@ -21,7 +21,7 @@ def get_mfa():
     return jsonify({"user": user_schema.dump(user), "uri": uri, "qr": get_b64encoded_qr_image(uri)}), 200
 
 
-@user_mfa_bp.route('/mfa/register', methods=['POST'])
+@user_mfa_bp.route('/register', methods=['POST'])
 @limiter.limit("10 per minute")
 def register_mfa():
     val, user = validate_token(request)
@@ -35,7 +35,7 @@ def register_mfa():
     return '', 200
 
 
-@user_mfa_bp.route('/mfa/refresh', methods=['POST'])
+@user_mfa_bp.route('/refresh', methods=['POST'])
 @limiter.limit("10 per minute")
 def refresh_mfa():
     val, user = validate_token(request)
@@ -49,7 +49,7 @@ def refresh_mfa():
     return '', 200
 
 
-@user_mfa_bp.route('/mfa/remove', methods=['POST'])
+@user_mfa_bp.route('/remove', methods=['POST'])
 @limiter.limit("10 per minute")
 def remove_mfa():
     val, user = validate_token(request)

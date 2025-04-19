@@ -5,14 +5,14 @@ from model.offer import Offer
 from model.wallet import Wallet, WalletTransaction, WalletSchema, WalletInflightSchema, WalletTransactionSchema
 from util.user import validate_token
 
-wallet_bp = Blueprint('wallet', __name__)
+wallet_bp = Blueprint('wallet', __name__, url_prefix='/wallet')
 wallet_schema = WalletSchema()
 wallet_inflight_schema = WalletInflightSchema()
 wallet_transaction_schema = WalletTransactionSchema()
 wallet_transactions_schema = WalletTransactionSchema(many=True)
 
 
-@wallet_bp.route('/wallet', methods=['GET'])
+@wallet_bp.route('', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_wallet():
     val, user = validate_token(request)
@@ -22,7 +22,7 @@ def get_wallet():
     return jsonify(wallet_schema.dump(wallet)), 200
 
 
-@wallet_bp.route('/wallet/inflight', methods=['GET'])
+@wallet_bp.route('/inflight', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_wallet_inflight():
     val, user = validate_token(request)
@@ -32,7 +32,7 @@ def get_wallet_inflight():
     return jsonify(wallet_inflight_schema.dump(wallet)), 200
 
 
-@wallet_bp.route('/wallet/transaction', methods=['GET'])
+@wallet_bp.route('/transaction', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_wallet_transaction():
     val, user = validate_token(request)
@@ -49,7 +49,7 @@ def get_wallet_transaction():
     return jsonify(wallet_transaction_schema.dump(wallet_transaction)), 200
 
 
-@wallet_bp.route('/wallet/transactions', methods=['GET'])
+@wallet_bp.route('/transactions', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_wallet_transactions():
     val, user = validate_token(request)
@@ -59,7 +59,7 @@ def get_wallet_transactions():
     return jsonify(wallet_transactions_schema.dump(wallet_transactions)), 200
 
 
-@wallet_bp.route('/wallet/transaction', methods=['POST'])
+@wallet_bp.route('/transaction', methods=['POST'])
 @limiter.limit("10 per minute")
 def add_wallet_transaction():
     val, user = validate_token(request)
@@ -95,7 +95,7 @@ def add_wallet_transaction():
     return jsonify(wallet_transaction_schema.dump(wl)), 200
 
 
-@wallet_bp.route('/wallet/reset', methods=['POST'])
+@wallet_bp.route('/reset', methods=['POST'])
 @limiter.limit("10 per minute")
 def reset_wallet():
     val, user = validate_token(request)
@@ -116,7 +116,7 @@ def reset_wallet():
     return '', 200
 
 
-@wallet_bp.route('/wallet/transaction/delete', methods=['POST'])
+@wallet_bp.route('/transaction/delete', methods=['POST'])
 @limiter.limit("10 per minute")
 def delete_wallet_transaction():
     val, user = validate_token(request)
