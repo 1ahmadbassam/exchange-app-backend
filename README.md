@@ -1,9 +1,11 @@
-# Backend Overview: LBP-USD Exchange OpenAPI
+# Backend Overview: LBP-USD Exchange App
 
 ## Introduction
-The **LBP-USD Exchange OpenAPI** serves as the backend for a multi-platform application designed to support a web frontend, an Android mobile app built with Kotlin, and a desktop application using JavaFX. The API allows users to register, authenticate, and conduct transactions involving USD to LBP and LBP to USD exchanges. It computes average exchange rates based on recent historical data, giving users a transparent view of currency trends.
+The **LBP-USD Exchange App** serves as the backend for a multi-platform application designed to support a web frontend, an Android mobile app built with Kotlin, and a desktop application using JavaFX. The API allows users to register, authenticate, and conduct transactions involving USD to LBP and LBP to USD exchanges. It computes average exchange rates based on recent historical data, giving users a transparent view of currency trends.
 
 The API also offers additional features such as wallet management, dealer management, multi-factor authentication (MFA), accessibility options, and news summarization.
+
+All API endpoints are documented in OpenAPI format which can be inspected by loading `openapi.yaml` in an appropriate renderer (e.g. Swagger).
 
 ## Key Features
 
