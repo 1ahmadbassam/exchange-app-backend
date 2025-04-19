@@ -168,7 +168,7 @@ paths:
       tags: [ User Management ]
       description: |
         Registers a new user with a unique username and password. The username must not already be taken, the password is hashed and securely stored. This route does not require authentication.
-        The password must meet the following criteria: at least 12 characters long, with at least 2 uppercase letters, 2 numbers, and a symbol. The password's strength is evaluated with a minimum permissible score of 0.4 and a minimum permissible entropy of 70 bits.
+        The password must meet the following criteria: at least 12 characters long, with at least 2 uppercase letters, 2 numbers, and a symbol. The password's strength is evaluated with a minimum permissible score of 0.4 and a minimum permissible entropy of 50 bits.
         Email verification is required for users to use the platform. A verification email will be sent if no other errors are encountered, and the user does not exist on the system until his email address is verified.
       operationId: createUser
       requestBody:
@@ -409,7 +409,7 @@ paths:
         Allows the user to reset their password using the token provided. The new password must meet the 
         password complexity requirements. The password must meet the following criteria: at least 12 characters long, 
         with at least 2 uppercase letters, 2 numbers, and a symbol. The password's strength is evaluated with a minimum 
-        permissible score of 0.4 and a minimum permissible entropy of 70 bits.
+        permissible score of 0.4 and a minimum permissible entropy of 50 bits.
         Unconfirmed users are also allowed to reset their password.
       operationId: passwordReset
       parameters:
