@@ -5,7 +5,7 @@ from model.transaction import Transaction
 from model.volume import DailyVolume, MonthlyVolume
 
 
-def _get_transaction_volume(start_date, end_date):
+def get_transaction_volume(start_date, end_date):
     usd_to_lbp = db.session.execute(db.select(Transaction).filter(Transaction.added_date.between(start_date, end_date),
                                                                   Transaction.usd_to_lbp)).scalars()
     usd_to_lbp_transaction_count = 0
@@ -30,7 +30,7 @@ def _get_transaction_volume(start_date, end_date):
 
 def _get_daily_transaction_volume(end_date=datetime.datetime.now(tz)):
     start_date = end_date.replace(hour=0, minute=0, second=0, microsecond=0)
-    return _get_transaction_volume(start_date, end_date)
+    return get_transaction_volume(start_date, end_date)
 
 
 def get_daily_transaction_volume(day: datetime.datetime = None):
@@ -58,7 +58,7 @@ def get_daily_transaction_volume(day: datetime.datetime = None):
 
 def _get_monthly_transaction_volume(end_date=datetime.datetime.now(tz)):
     start_date = end_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    return _get_transaction_volume(start_date, end_date)
+    return get_transaction_volume(start_date, end_date)
 
 
 def get_monthly_transaction_volume(month: datetime.datetime = None):

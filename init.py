@@ -42,3 +42,7 @@ mail = Mail(app)
 
 MARKETAUX_KEY = os.getenv('MARKETAUX_KEY')
 GEMINI_KEY = os.getenv('GEMINI_KEY')
+
+AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY')
+AWS_SECRET_KEY = os.getenv('AWS_SECRET_KEY')
+AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN')
