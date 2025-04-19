@@ -104,7 +104,7 @@ def retrieve_news(after: datetime.datetime = None, limit: int = 3):
 @scheduler.task('interval', id='news_update', minutes=15)
 def news_update():
     with app.app_context():
-        last_refresh = db.session.query(News).order_by(News.timestamp.desc()).first()
+        last_refresh = db.session.query(News).order_by(News.timestamp.desc()).first().timestamp
         c = db.session.query(News).count()
         news = retrieve_news(last_refresh)
         if c + len(news) > 50:
