@@ -2158,7 +2158,6 @@ paths:
             type: string
             enum: [ "24h", "7d", "14d", "30d" ]
             description: The time period over which the exchange rates should be converted into audio.
-            example: "7d"
       responses:
         '200':
           $ref: '#/components/responses/RateSonificationResponse'
@@ -2188,7 +2187,6 @@ paths:
             type: string
             enum: [ "24h", "7d", "14d", "30d" ]
             description: The time period over which the transaction volumes should be converted into audio.
-            example: "7d"
       responses:
         '200':
           $ref: '#/components/responses/VolumeSonificationResponse'
