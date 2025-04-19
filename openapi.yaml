@@ -43,7 +43,7 @@ info:
   license:
     name: GNU General Public License v3.0
     url: https://www.gnu.org/licenses/gpl-3.0.html
-  version: 1.0.3
+  version: 2.0.0
 tags:
   - name: "Exchange Rates"
     description: "Endpoints related to exchange rate information."
@@ -2141,6 +2141,67 @@ paths:
                   summary: Invalid count parameter
                   value:
                     error: "Invalid count value, must be greater than 0."
+  /sonification/rate:
+    get:
+      summary: Convert exchange rate data to audio tones based on rate changes
+      tags: [ Accessibility Management ]
+      description: |
+        This endpoint converts exchange rate data (USD to LBP and LBP to USD) over a specified period into audio tones representing the rate changes.
+        The tone frequencies are generated based on the rate deltas (differences between consecutive rates). 
+        `The `period` argument is required to specify the time range, and the result includes audio (in WAV format) and the corresponding rate deltas.
+      operationId: sonifyRate
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [ "24h", "7d", "14d", "30d" ]
+            description: The time period over which the exchange rates should be converted into audio.
+            example: "7d"
+      responses:
+        '200':
+          $ref: '#/components/responses/RateSonificationResponse'
+        '400':
+          description: Invalid or missing period parameter
+          content:
+            application/json:
+              examples:
+                InvalidPeriod:
+                  summary: Invalid period value
+                  value:
+                    error: "Invalid or missing period"
+
+  /sonification/volume:
+    get:
+      summary: Convert transaction volume data to audio tones based on volume changes
+      tags: [ Accessibility Management ]
+      description: |
+        This endpoint converts transaction volume data for USD to LBP and LBP to USD exchanges into audio tones, where the tone frequencies represent the changes in transaction volume over a specified period.
+        The `period` argument is required, and the result includes audio (in WAV format) and the corresponding volume deltas (differences between consecutive volumes).
+      operationId: sonifyVolume
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [ "24h", "7d", "14d", "30d" ]
+            description: The time period over which the transaction volumes should be converted into audio.
+            example: "7d"
+      responses:
+        '200':
+          $ref: '#/components/responses/VolumeSonificationResponse'
+        '400':
+          description: Invalid or missing period parameter
+          content:
+            application/json:
+              examples:
+                InvalidPeriod:
+                  summary: Invalid period value
+                  value:
+                    error: "Invalid or missing period"
+
 components:
   schemas:
     UnconfirmedUser:
@@ -3290,6 +3351,116 @@ components:
                 message: "The exchange rate for USD to LBP has increased by 2% over the last 7 days, indicating a slight strengthening of the Lebanese Pound."
                 audio: "base64encodedaudiohere=="
                 audio_mime_type: "audio/mp3"
+    RateSonificationResponse:
+      description: Successfully generated sonification of exchange rate data
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              usd_to_lbp:
+                type: object
+                properties:
+                  values:
+                    type: array
+                    items:
+                      type: number
+                    description: The deltas (rate differences) between consecutive USD to LBP exchange rates
+                  audio:
+                    type: string
+                    description: Base64-encoded WAV audio of the sonified USD to LBP rate changes
+                  audio_mime:
+                    type: string
+                    description: MIME type of the audio (usually "audio/wav")
+                  interval:
+                    type: number
+                    description: The time interval (usually 1 second) between each tone
+              lbp_to_usd:
+                type: object
+                properties:
+                  values:
+                    type: array
+                    items:
+                      type: number
+                    description: The deltas (rate differences) between consecutive LBP to USD exchange rates
+                  audio:
+                    type: string
+                    description: Base64-encoded WAV audio of the sonified LBP to USD rate changes
+                  audio_mime:
+                    type: string
+                    description: MIME type of the audio (usually "audio/wav")
+                  interval:
+                    type: number
+                    description: The time interval (usually 1 second) between each tone
+          examples:
+            Success:
+              summary: Sonification of exchange rates
+              value:
+                usd_to_lbp:
+                  values: [ 1.2, 2.5, -0.7, 1.8 ]
+                  audio: "base64encodedaudiohere=="
+                  audio_mime: "audio/wav"
+                  interval: 1
+                lbp_to_usd:
+                  values: [ -0.5, 0.3, 1.2, -0.9 ]
+                  audio: "base64encodedaudiohere=="
+                  audio_mime: "audio/wav"
+                  interval: 1
+    VolumeSonificationResponse:
+      description: Successfully generated sonification of transaction volume data
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              usd_to_lbp:
+                type: object
+                properties:
+                  values:
+                    type: array
+                    items:
+                      type: number
+                    description: The deltas (volume differences) for USD to LBP transactions
+                  audio:
+                    type: string
+                    description: Base64-encoded WAV audio of the sonified USD to LBP transaction volumes
+                  audio_mime:
+                    type: string
+                    description: MIME type of the audio (usually "audio/wav")
+                  interval:
+                    type: number
+                    description: The time interval (usually 1 second) between each tone
+              lbp_to_usd:
+                type: object
+                properties:
+                  values:
+                    type: array
+                    items:
+                      type: number
+                    description: The deltas (volume differences) for LBP to USD transactions
+                  audio:
+                    type: string
+                    description: Base64-encoded WAV audio of the sonified LBP to USD transaction volumes
+                  audio_mime:
+                    type: string
+                    description: MIME type of the audio (usually "audio/wav")
+                  interval:
+                    type: number
+                    description: The time interval (usually 1 second) between each tone
+          examples:
+            Success:
+              summary: Sonification of transaction volumes
+              value:
+                usd_to_lbp:
+                  values: [ 5.0, -3.2, 1.1, 4.5 ]
+                  audio: "base64encodedaudiohere=="
+                  audio_mime: "audio/wav"
+                  interval: 1
+                lbp_to_usd:
+                  values: [ -2.1, 0.9, -1.8, 3.0 ]
+                  audio: "base64encodedaudiohere=="
+                  audio_mime: "audio/wav"
+                  interval: 1
   securitySchemes:
     bearerAuth:
       type: http

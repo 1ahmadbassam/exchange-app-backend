@@ -1,4 +1,5 @@
 from api.accessibility.base import accessibility_bp
+from api.accessibility.sonification import sonification_bp
 from api.accessibility.summarize import summarize_bp
 from api.dealer import dealer_bp
 from api.exchange import exchange_bp
@@ -23,6 +24,7 @@ app.register_blueprint(dealer_bp)
 app.register_blueprint(accessibility_bp)
 app.register_blueprint(news_bp)
 app.register_blueprint(summarize_bp)
+app.register_blueprint(sonification_bp)
 
 if __name__ == "__main__":
     with app.app_context():
