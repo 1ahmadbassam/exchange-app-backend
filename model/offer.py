@@ -7,6 +7,8 @@ from init import db, ma, tz
 
 
 class Offer(db.Model):
+    __tablename__ = "offer"
+
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     usd_amount: Mapped[float] = mapped_column(nullable=False)
     lbp_amount: Mapped[float] = mapped_column(nullable=False)

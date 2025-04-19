@@ -7,6 +7,8 @@ from init import db, ma
 
 
 class Dealer(db.Model):
+    __tablename__ = 'dealer'
+
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     lng: Mapped[float] = mapped_column(nullable=False)
     lat: Mapped[float] = mapped_column(nullable=False)

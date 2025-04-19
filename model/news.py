@@ -6,6 +6,8 @@ from init import db, ma
 
 
 class News(db.Model):
+    __tablename__ = 'news'
+
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     headline: Mapped[str] = mapped_column(db.Text, nullable=False)
     content: Mapped[str] = mapped_column(db.Text, nullable=False)
