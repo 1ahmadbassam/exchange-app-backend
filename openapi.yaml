@@ -512,6 +512,41 @@ paths:
                   summary: Internal Error
                   value:
                     error: Internal server error
+  /mfa/check:
+    get:
+      summary: Check the MFA status for the authenticated user
+      tags: [ Multi-Factor Authentication ]
+      description: |
+        This endpoint checks the status of Multi-Factor Authentication (MFA) for the authenticated user.
+        If MFA is enabled, the response will return `true`. Otherwise, it will return `false`.
+      operationId: getMfaCheck
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Successfully retrieved MFA status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mfa:
+                    type: boolean
+                    description: Indicates if MFA is enabled for the user
+              examples:
+                Success:
+                  summary: MFA status checked
+                  value:
+                    mfa: true
+        '403':
+          description: Invalid or expired token
+          content:
+            application/json:
+              examples:
+                InvalidToken:
+                  summary: Invalid or expired token
+                  value:
+                    error: "Invalid or expired token"
   /mfa/register:
     get:
       summary: Generate MFA setup URI and QR code

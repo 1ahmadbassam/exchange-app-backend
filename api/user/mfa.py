@@ -9,6 +9,15 @@ user_mfa_bp = Blueprint('user_mfa', __name__, url_prefix='/mfa')
 user_schema = UserSchema()
 
 
+@user_mfa_bp.route('/check', methods=['GET'])
+@limiter.limit(rate='10 per minute')
+def get_mfa_check():
+    val, user = validate_token(request)
+    if not val:
+        return jsonify({"error": "Invalid or expired token"}), 403
+    return jsonify({"mfa": user.mfa}), 200
+
+
 @user_mfa_bp.route('/register', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_mfa():
