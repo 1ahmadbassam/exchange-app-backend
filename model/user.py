@@ -25,7 +25,9 @@ class User(db.Model):
     __wallet = db.relationship("Wallet", cascade="all, delete", backref="user")
     __accessibility = db.relationship("Accessibility", cascade="all, delete", backref="user")
 
-    def __init__(self, user_name, password, email, hsh=True, created_at=datetime.datetime.now(tz), verified_at=None):
+    def __init__(self, user_name, password, email, hsh=True, created_at=None, verified_at=None):
+        if not created_at:
+            created_at = datetime.datetime.now(tz)
         super(User, self).__init__(user_name=user_name,
                                    email=email,
                                    created_at=created_at,

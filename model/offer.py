@@ -20,7 +20,9 @@ class Offer(db.Model):
     created_at: Mapped[datetime.datetime] = mapped_column(nullable=False)
 
     def __init__(self, usd_amount, lbp_amount, usd_to_lbp, user_id, location, phone_number,
-                 created_at=datetime.datetime.now(tz)):
+                 created_at=None):
+        if not created_at:
+            created_at = datetime.datetime.now(tz)
         super(Offer, self).__init__(usd_amount=usd_amount,
                                     lbp_amount=lbp_amount,
                                     usd_to_lbp=usd_to_lbp,

@@ -55,7 +55,9 @@ class WalletTransaction(db.Model):
     user_id: Mapped[int] = mapped_column(db.ForeignKey('wallet.user_id'), nullable=False)
     description: Mapped[str] = mapped_column(String(128), nullable=False)
 
-    def __init__(self, usd_amount, lbp_amount, user_id, description, added_date=datetime.datetime.now(tz)):
+    def __init__(self, usd_amount, lbp_amount, user_id, description, added_date=None):
+        if not added_date:
+            added_date = datetime.datetime.now(tz)
         super(WalletTransaction, self).__init__(usd_amount=usd_amount,
                                                 lbp_amount=lbp_amount,
                                                 user_id=user_id,
