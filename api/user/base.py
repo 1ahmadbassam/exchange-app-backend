@@ -114,7 +114,7 @@ def resend_verify_user():
 
     u_user = db.session.query(UnconfirmedUser).filter_by(email=email).scalar()
     if not u_user:
-        if db.session.query(User).filter_by(user_name=email).scalar():
+        if db.session.query(User).filter_by(email=email).scalar():
             return jsonify({"error": "Email already verified"}), 400
         else:
             return jsonify({"error": "Email not valid"}), 403
