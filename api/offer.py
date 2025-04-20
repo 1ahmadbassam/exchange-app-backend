@@ -92,7 +92,7 @@ def update_offer():
     val, user = validate_token(request)
     if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
-    offer_id = request.json.get('offer_id', None)
+    offer_id = request.json.get('id', None)
     if offer_id is None:
         return jsonify({"error": "Missing required fields"}), 400
     offer = db.session.query(Offer).filter_by(id=offer_id).first()
@@ -149,7 +149,12 @@ def update_offer():
     if lbp_amount:
         offer.lbp_amount = lbp_amount
     offer.usd_to_lbp = usd_to_lbp
-    wallet.add_inflight(usd_amount, lbp_amount, usd_to_lbp)
+    wallet.add_inflight(usd_amount if usd_amount is not None else offer.usd_amount,
+                        lbp_amount if lbp_amount is not None else offer.lbp_amount, usd_to_lbp)
+    if location:
+        offer.location = location
+    if phone_number:
+        offer.phone_number = phone_number
     db.session.commit()
     return jsonify(offer_schema.dump(offer)), 200
 
