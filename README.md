@@ -89,7 +89,7 @@ You can use Gmail if you like, make sure to generate an app password to be able 
 
 To run the backend, you must clone this repo \[https://github.com/EECE430LSpring2025/exchange-openapi-group-14\] and navigate to the `backend` folder.
 
-You must also create an `.env` file storing your own secrets for the backend based on the keys and MySQL database information you obtained above. Begin by generating secure SECRET_KEY and SECURITY_PASSWORD_SALT values (entropy of 150 or greater bits is recommended).
+You must also create an `.env` file storing your own secrets for the backend based on the keys and MySQL database information you obtained above. Begin by generating secure SECRET_KEY and SECURITY_PASSWORD_SALT values (entropy of 150 or greater bits is recommended). Note that SECRET_KEY must be encoded as a binary (byte) value.
 
 Then, you can create `.env` with the following content, replacing content within angle brackets with their respective values. You must also set MAIL_SERVER, MAIL_PORT, and MAIL_USE_TLS as appropriate if you do not wish to use Gmail.
 ```
