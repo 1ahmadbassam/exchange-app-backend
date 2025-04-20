@@ -70,7 +70,7 @@ def delete_offer():
     val, user = validate_token(request)
     if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
-    offer_id = request.json.get('offer_id', None)
+    offer_id = request.json.get('id', None)
     if offer_id is None:
         return jsonify({"error": "Missing required fields"}), 400
     offer = db.session.query(Offer).filter_by(id=offer_id).first()
@@ -182,7 +182,7 @@ def accept_offer():
     val, user = validate_token(request)
     if not val:
         return jsonify({"error": "Invalid or expired token"}), 403
-    offer_id = request.json.get('offer_id', None)
+    offer_id = request.json.get('id', None)
     if offer_id is None:
         return jsonify({"error": "Missing required fields"}), 400
     offer = db.session.query(Offer).filter_by(id=offer_id).first()
