@@ -9,15 +9,15 @@ class News(db.Model):
     __tablename__ = 'news'
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    headline: Mapped[str] = mapped_column(db.Text, nullable=False)
-    content: Mapped[str] = mapped_column(db.Text, nullable=False)
-    source: Mapped[str] = mapped_column(db.Text, nullable=False)
-    impact: Mapped[int] = mapped_column(nullable=False)
-    impact_summary: Mapped[str] = mapped_column(db.Text, nullable=False)
-    confidence: Mapped[float] = mapped_column(nullable=False)
-    timestamp: Mapped[datetime.datetime] = mapped_column(nullable=False)
-    url: Mapped[str] = mapped_column(db.Text, nullable=False)
-    image: Mapped[str] = mapped_column(db.Text, nullable=False)
+    headline: Mapped[str] = mapped_column(db.Text, nullable=True)
+    content: Mapped[str] = mapped_column(db.Text, nullable=True)
+    source: Mapped[str] = mapped_column(db.Text, nullable=True)
+    impact: Mapped[int] = mapped_column(nullable=True)
+    impact_summary: Mapped[str] = mapped_column(db.Text, nullable=True)
+    confidence: Mapped[float] = mapped_column(nullable=True)
+    timestamp: Mapped[datetime.datetime] = mapped_column(nullable=True)
+    url: Mapped[str] = mapped_column(db.Text, nullable=True)
+    image: Mapped[str] = mapped_column(db.Text, nullable=True)
 
     def __init__(self, headline, content, source, impact, impact_summary, confidence, timestamp, url, image):
         super(News, self).__init__(headline=headline,
