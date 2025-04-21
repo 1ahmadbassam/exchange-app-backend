@@ -33,7 +33,7 @@ def summarize_rate():
         if usd_to_lbp and usd_to_lbp_former:
             usd_to_lbp_delta = 100 * (usd_to_lbp - usd_to_lbp_former) / usd_to_lbp_former
         else:
-            usd_to_lbp_delta = None
+            usd_to_lbp_delta = 0
         usd_to_lbp_deltas.append(usd_to_lbp_delta)
     lbp_to_usd_deltas = []
     for i in range(1, len(lbp_to_usd_rates)):
@@ -42,7 +42,7 @@ def summarize_rate():
         if lbp_to_usd and lbp_to_usd_former:
             lbp_to_usd_delta = 100 * (lbp_to_usd - lbp_to_usd_former) / lbp_to_usd_former
         else:
-            lbp_to_usd_delta = None
+            lbp_to_usd_delta = 0
         lbp_to_usd_deltas.append(lbp_to_usd_delta)
     usd_to_lbp_tones, usd_to_lbp_mime, usd_to_lbp_duration = delta_to_tone(usd_to_lbp_deltas, alpha=100)
     lbp_to_usd_tones, lbp_to_usd_mime, lbp_to_usd_duration = delta_to_tone(lbp_to_usd_deltas, alpha=100)
@@ -86,7 +86,7 @@ def summarize_volume():
         if usd_to_lbp and usd_to_lbp_former:
             usd_to_lbp_delta = 100 * (usd_to_lbp - usd_to_lbp_former) / usd_to_lbp_former
         else:
-            usd_to_lbp_delta = None
+            usd_to_lbp_delta = 0
         usd_to_lbp_deltas.append(usd_to_lbp_delta)
     lbp_to_usd_deltas = []
     for i in range(1, len(lbp_to_usd_total_amounts)):
@@ -95,7 +95,7 @@ def summarize_volume():
         if lbp_to_usd and lbp_to_usd_former:
             lbp_to_usd_delta = 100 * (lbp_to_usd - lbp_to_usd_former) / lbp_to_usd_former
         else:
-            lbp_to_usd_delta = None
+            lbp_to_usd_delta = 0
         lbp_to_usd_deltas.append(lbp_to_usd_delta)
     usd_to_lbp_tones, usd_to_lbp_mime, usd_to_lbp_duration = delta_to_tone(usd_to_lbp_deltas)
     lbp_to_usd_tones, lbp_to_usd_mime, lbp_to_usd_duration = delta_to_tone(lbp_to_usd_deltas)
