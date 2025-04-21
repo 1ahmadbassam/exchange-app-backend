@@ -3315,7 +3315,7 @@ components:
                   confidence: 0.95
                   timestamp: "2025-04-17T10:30:00Z"
                   url: "https://example.com/global-economy-update"
-                  image: "https://example.com/image.jpg"
+                  image: "base64imagehere=="
                 - id: 2
                   headline: "Tech Innovations in 2025"
                   content: "Technological advancements are accelerating rapidly in various fields..."
@@ -3325,7 +3325,7 @@ components:
                   confidence: 0.85
                   timestamp: "2025-04-17T09:00:00Z"
                   url: "https://example.com/tech-innovations-2025"
-                  image: "https://example.com/tech-image.jpg"
+                  image: "base64imagehere=="
     SummaryResponse:
       description: Successfully summarized data
       content:
